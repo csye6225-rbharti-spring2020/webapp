@@ -18,13 +18,7 @@ jobs:
     working_directory: ~/webapp
     steps:
       - checkout
-      - restore_cache:
-          key: webapp-{{ checksum "pom.xml" }}
       - run: mvn dependency:go-offline
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: webapp-{{ checksum "pom.xml" }}
       - run: mvn package
       - store_test_results:
           path: target/surefire-reports
