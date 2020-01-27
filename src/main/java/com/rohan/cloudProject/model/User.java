@@ -14,7 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Entity (Model) class for the Spring Boot Application. Uses LomBok for getters, setters and constructor
+ * User Entity (Model) class for the Spring Boot Application. Uses LomBok for getters, setters and constructor
  * initialization.
  *
  * @author rohan_bharti
