@@ -1,0 +1,44 @@
+version: 2.0
+
+jobs:
+
+  pr:
+    docker:
+      - image: circleci/openjdk:8-jdk-stretch
+    working_directory: ~/webapp
+    steps:
+      - checkout
+      - run:
+          name: Clean Install and run Tests
+          command: mvn clean install
+
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk-stretch
+    working_directory: ~/webapp
+    steps:
+      - checkout
+      - restore_cache:
+          key: webapp-{{ checksum "pom.xml" }}
+      - run: mvn dependency:go-offline
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: webapp-{{ checksum "pom.xml" }}
+      - run: mvn package
+      - store_test_results:
+          path: target/surefire-reports
+      - store_artifacts:
+          path: target/webapp-0.0.1-SNAPSHOT.jar
+
+workflows:
+  version: 2
+  pr_check:
+    jobs:
+      - pr
+  build_and_deploy:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: master
