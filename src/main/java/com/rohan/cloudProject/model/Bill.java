@@ -1,7 +1,6 @@
 package com.rohan.cloudProject.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.rohan.cloudProject.model.validator.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +12,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import javax.persistence.*;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.List;
 
@@ -60,27 +60,25 @@ public class Bill {
 
     @JsonProperty(value = "bill_date")
     @Temporal(TemporalType.DATE)
-    @NotBlank(message = "Bill Date is mandatory")
+    @NotNull
     private Date billDate;
 
     @JsonProperty(value = "due_date")
     @Temporal(TemporalType.DATE)
-    @NotBlank(message = "Due Date is mandatory")
+    @NotNull
     private Date dueDate;
 
     @JsonProperty(value = "amount_due")
-    @NotBlank(message = "Amount Due is mandatory")
+    @NotNull
     @DecimalMin(value = "0.01", message = "The Amount Due has to be greater than 0.01$")
     private Double amountDue;
 
     @JsonProperty(value = "categories")
-    @NotBlank(message = "Category is mandatory")
+    @NotNull
     @ElementCollection
     private List<String> categories;
 
     @JsonProperty(value = "paymentStatus")
-    @NotBlank(message = "Payment Status is mandatory")
-    @EnumValue(anyOf = {PayStatus.due, PayStatus.no_payment_required, PayStatus.paid, PayStatus.past_due})
+    @NotNull
     private PayStatus payStatus;
-
 }

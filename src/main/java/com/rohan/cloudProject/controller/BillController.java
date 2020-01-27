@@ -61,11 +61,11 @@ public class BillController {
             User user = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
-                user = userService.getUserDetails(userId);
             } catch (IllegalArgumentException illegalArgumentException) {
-                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.BAD_REQUEST);
+                return new ResponseEntity("Authentication Error", HttpStatus.BAD_REQUEST);
             }
 
+            user = userService.getUserDetails(userId);
             billToBeSaved.setUser(user);
             try {
                 Bill bill = billService.createNewBill(billToBeSaved);

@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -35,8 +37,32 @@ public class BillService {
         billToBeSaved.setBillCreated(currentDate);
         billToBeSaved.setBillUpdated(currentDate);
 
+        if (billToBeSaved.getCategories().size() == 0) {
+            throw new IllegalArgumentException("Please add a category!");
+        }
+
+        if (!(verifyDateFormat(billToBeSaved.getBillDate()) && verifyDateFormat(billToBeSaved.getDueDate()))) {
+            throw new IllegalArgumentException("Date has to be in YYYY-MM-DD!");
+        }
+
         logger.info("Bill has been successfully saved.");
         return billRepository.save(billToBeSaved);
+    }
+
+    private boolean verifyDateFormat(Date date) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String dateString = date.toString();
+        if (date != null) {
+            try {
+                Date ret = simpleDateFormat.parse(dateString.trim());
+                if (simpleDateFormat.format(ret).equals(dateString.trim())) {
+                    return true;
+                }
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
     }
 }
 

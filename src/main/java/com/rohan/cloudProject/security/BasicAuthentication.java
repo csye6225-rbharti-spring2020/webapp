@@ -90,8 +90,8 @@ public class BasicAuthentication {
         byte[] decodedCredentials = Base64.getDecoder().decode(base64Token);
         String combinedCredentials = new String(decodedCredentials, StandardCharsets.UTF_8);
         final String[] decodedValues = combinedCredentials.split(":", 2);
-        credentials.put("email", decodedValues[0]);
-        credentials.put("password", decodedValues[1]);
+        credentials.put("email", decodedValues[0].trim());
+        credentials.put("password", decodedValues[1].trim());
         return credentials;
     }
 }
