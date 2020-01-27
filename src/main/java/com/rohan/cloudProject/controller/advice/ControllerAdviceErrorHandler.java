@@ -18,7 +18,7 @@ import java.util.Map;
  */
 @ControllerAdvice
 @ResponseBody
-public class UserControllerAdvice {
+public class ControllerAdviceErrorHandler {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(Exception.class)

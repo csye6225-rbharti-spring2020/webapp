@@ -1,6 +1,7 @@
 package com.rohan.cloudProject.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.rohan.cloudProject.model.validator.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -79,11 +80,7 @@ public class Bill {
 
     @JsonProperty(value = "paymentStatus")
     @NotBlank(message = "Payment Status is mandatory")
-    @ElementCollection
-    private List<PAYSTATUS> payStatus;
-
-    static enum PAYSTATUS {
-        paid, due, past_due, no_payment_required
-    }
+    @EnumValue(anyOf = {PayStatus.due, PayStatus.no_payment_required, PayStatus.paid, PayStatus.past_due})
+    private PayStatus payStatus;
 
 }

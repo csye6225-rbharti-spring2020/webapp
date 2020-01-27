@@ -16,7 +16,7 @@ import javax.validation.Valid;
 import java.util.Map;
 
 /**
- * Controller class for the Spring Boot Application. Defines all the REST APIs.
+ * User Controller class for the Spring Boot Application. Defines all the REST APIs.
  *
  * @author rohan_bharti
  */

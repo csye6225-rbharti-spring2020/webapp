@@ -19,7 +19,7 @@ import java.util.*;
 import static org.mockito.Mockito.when;
 
 /**
- * Test class for the Service Layer functions.
+ * Test class for the User Service Layer functions.
  *
  * @author rohan_bharti
  */

@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Service Layer Class for the Spring Boot Application.
+ * User Service Layer Class for the Spring Boot Application.
  *
  * @author rohan_bharti
  */
