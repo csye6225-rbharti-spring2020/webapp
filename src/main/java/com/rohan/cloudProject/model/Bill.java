@@ -15,7 +15,7 @@ import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Bill Entity (Model) class for the Spring Boot Application. Uses LomBok for getters, setters and constructor
@@ -37,7 +37,7 @@ public class Bill {
      */
     @Id
     @GeneratedValue(generator = "uuidGenerator")
-    @GenericGenerator(name = "uuidGenerator", strategy = "uuid")
+    @GenericGenerator(name = "uuidGenerator", strategy = "org.hibernate.id.UUIDGenerator")
     @JsonProperty(value = "id", access = JsonProperty.Access.READ_ONLY)
     private String billId;
 
@@ -83,7 +83,7 @@ public class Bill {
     @JsonProperty(value = "categories")
     @NotNull
     @ElementCollection
-    private List<String> categories;
+    private Set<String> categories;
 
     @Enumerated(EnumType.STRING)
     @JsonProperty(value = "paymentStatus")

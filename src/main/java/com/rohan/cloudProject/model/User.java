@@ -33,7 +33,7 @@ public class User implements Serializable {
      */
     @Id
     @GeneratedValue(generator = "uuidGenerator")
-    @GenericGenerator(name = "uuidGenerator", strategy = "uuid")
+    @GenericGenerator(name = "uuidGenerator", strategy = "org.hibernate.id.UUIDGenerator")
     @JsonProperty(value = "id", access = JsonProperty.Access.READ_ONLY)
     private String id;
 
