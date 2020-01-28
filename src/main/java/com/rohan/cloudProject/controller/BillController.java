@@ -12,12 +12,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * Bill Controller class for the Spring Boot Application. Defines all the REST APIs.
@@ -66,7 +64,12 @@ public class BillController {
             }
 
             user = userService.getUserDetails(userId);
+            if (user == null) {
+                return new ResponseEntity("User doesn't exist", HttpStatus.BAD_REQUEST);
+            }
+
             billToBeSaved.setUser(user);
+            billToBeSaved.setUserId(userId);
             try {
                 Bill bill = billService.createNewBill(billToBeSaved);
                 return new ResponseEntity(bill, HttpStatus.CREATED);
@@ -78,4 +81,65 @@ public class BillController {
         }
     }
 
+    /**
+     * GET API to fetch all the bills for the supplied User Information.
+     * Each Bill is mapped to its respective User. Basic Auth is done before the bills are fetched for that user.
+     *
+     * @param authHeader
+     * @return ResponseEntity
+     */
+    @GetMapping("/v1/bills")
+    @ApiOperation("Gets all the bills for the user")
+    public ResponseEntity getBillsByUserId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader) {
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
+            String userId = null;
+            User user = null;
+            try {
+                userId = basicAuthentication.authorize(authHeader);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity("Authentication Error", HttpStatus.UNAUTHORIZED);
+            }
+
+            List<Bill> bills;
+            try {
+                bills = billService.getAllBillsByUserId(userId);
+            } catch (Exception ex) {
+                return new ResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+            return new ResponseEntity(bills, HttpStatus.OK);
+        } else {
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * DELETE API to delete the bill for the billId supplied for. Each Bill is mapped to its respective User.
+     * Basic Auth is done before the bills are fetched for that user.
+     *
+     * @param authHeader
+     * @param billId
+     * @return ResponseEntity
+     */
+    @DeleteMapping("/v1/bill/{id}")
+    @ApiOperation("Deletes the bill for the User once he/she is authenticated")
+    public ResponseEntity deleteBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable(value = "id") String billId) {
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
+            String userId = null;
+            User user = null;
+            try {
+                userId = basicAuthentication.authorize(authHeader);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity("Authentication Error", HttpStatus.UNAUTHORIZED);
+            }
+
+            try {
+                billService.deleteById(billId);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
+        }
+    }
 }

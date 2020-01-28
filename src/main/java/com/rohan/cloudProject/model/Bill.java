@@ -1,5 +1,6 @@
 package com.rohan.cloudProject.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,16 +36,20 @@ public class Bill {
      * Id is generated in a UUID format.
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "uuidGenerator")
+    @GeneratedValue(generator = "uuidGenerator")
     @GenericGenerator(name = "uuidGenerator", strategy = "uuid")
     @JsonProperty(value = "id", access = JsonProperty.Access.READ_ONLY)
     private String billId;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JsonProperty(value = "owner_id", access = JsonProperty.Access.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private User user;
+
+    @Transient
+    @JsonProperty(value = "owner_id", access = JsonProperty.Access.READ_ONLY)
+    private String userId;
 
     @JsonProperty(value = "created_ts", access = JsonProperty.Access.READ_ONLY)
     @Temporal(TemporalType.TIMESTAMP)
@@ -60,11 +65,13 @@ public class Bill {
 
     @JsonProperty(value = "bill_date")
     @Temporal(TemporalType.DATE)
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @NotNull
     private Date billDate;
 
     @JsonProperty(value = "due_date")
     @Temporal(TemporalType.DATE)
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @NotNull
     private Date dueDate;
 
@@ -78,6 +85,7 @@ public class Bill {
     @ElementCollection
     private List<String> categories;
 
+    @Enumerated(EnumType.STRING)
     @JsonProperty(value = "paymentStatus")
     @NotNull
     private PayStatus payStatus;

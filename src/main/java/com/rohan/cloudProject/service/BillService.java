@@ -7,9 +7,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Bill Service Layer Class for the Spring Boot Application.
@@ -32,7 +32,6 @@ public class BillService {
      * @return
      */
     public Bill createNewBill(Bill billToBeSaved) {
-
         Date currentDate = new Date();
         billToBeSaved.setBillCreated(currentDate);
         billToBeSaved.setBillUpdated(currentDate);
@@ -41,28 +40,37 @@ public class BillService {
             throw new IllegalArgumentException("Please add a category!");
         }
 
-        if (!(verifyDateFormat(billToBeSaved.getBillDate()) && verifyDateFormat(billToBeSaved.getDueDate()))) {
-            throw new IllegalArgumentException("Date has to be in YYYY-MM-DD!");
-        }
-
         logger.info("Bill has been successfully saved.");
         return billRepository.save(billToBeSaved);
     }
 
-    private boolean verifyDateFormat(Date date) {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String dateString = date.toString();
-        if (date != null) {
-            try {
-                Date ret = simpleDateFormat.parse(dateString.trim());
-                if (simpleDateFormat.format(ret).equals(dateString.trim())) {
-                    return true;
-                }
-            } catch (ParseException e) {
-                e.printStackTrace();
+    /**
+     * Takes in User Id, if everything is validated successfully, checks if there are any bills for that User, if not
+     * throws an Exception.
+     *
+     * @param userId
+     * @return List<Bill></Bill>
+     */
+    public List<Bill> getAllBillsByUserId(String userId) {
+        List<Bill> userBills = new ArrayList<>();
+        List<Bill> allBills = billRepository.findAll();
+
+        for (Bill bill : allBills) {
+            if (bill.getUser().getId().equals(userId)) {
+                bill.setUserId(userId);
+                userBills.add(bill);
             }
         }
-        return false;
+
+        if (userBills.size() == 0) {
+            throw new IllegalStateException("No bills exist for this user yet!");
+        }
+
+        return userBills;
+    }
+
+    public void deleteById(String billId) {
+        billRepository.deleteById(billId);
     }
 }
 
