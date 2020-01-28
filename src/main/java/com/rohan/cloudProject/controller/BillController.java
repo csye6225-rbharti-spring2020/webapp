@@ -134,10 +134,34 @@ public class BillController {
 
             try {
                 billService.deleteById(billId);
-            } catch (IllegalArgumentException illegalArgumentException) {
+            } catch (Exception ex) {
                 return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
             }
             return new ResponseEntity(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @GetMapping("/v1/bill/{id}")
+    @ApiOperation("Fetches the Bill by its bill id.")
+    public ResponseEntity getBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable(value = "id") String billId) {
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
+            String userId = null;
+            User user = null;
+            try {
+                userId = basicAuthentication.authorize(authHeader);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity("Authentication Error", HttpStatus.UNAUTHORIZED);
+            }
+
+            Bill bill;
+            try {
+                bill = billService.getBillByBillId(billId);
+            } catch (Exception ex) {
+                return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity(bill, HttpStatus.OK);
         } else {
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }

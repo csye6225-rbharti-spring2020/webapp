@@ -69,8 +69,33 @@ public class BillService {
         return userBills;
     }
 
-    public void deleteById(String billId) {
+    /**
+     * Delete the bill by the billId supplied.
+     *
+     * @param billId
+     * @throws Exception
+     */
+    public void deleteById(String billId) throws Exception {
+        if (!billRepository.existsById(billId)) {
+            throw new Exception("The Bill ID doesn't exist!");
+        }
+
         billRepository.deleteById(billId);
+    }
+
+    /**
+     * Fetches the bill by its id.
+     *
+     * @param billId
+     * @return bill
+     * @throws Exception
+     */
+    public Bill getBillByBillId(String billId) throws Exception {
+        if (!billRepository.existsById(billId)) {
+            throw new Exception("The Bill ID doesn't exist!");
+        }
+
+        return billRepository.findById(billId).get();
     }
 }
 
