@@ -97,5 +97,32 @@ public class BillService {
 
         return billRepository.findById(billId).get();
     }
+
+    /**
+     * Updates the bill by its ID.
+     *
+     * @param bill
+     * @param billId
+     * @return Bill
+     * @throws Exception
+     */
+    public Bill updateBillByBillId(Bill bill, String billId) throws Exception {
+        if (!billRepository.existsById(billId)) {
+            throw new Exception("The Bill ID doesn't exist!");
+        }
+
+        return billRepository.findById(billId).map(
+                updatedBill -> {
+                    updatedBill.setVendor(bill.getVendor());
+                    updatedBill.setBillDate(bill.getBillDate());
+                    updatedBill.setDueDate(bill.getDueDate());
+                    updatedBill.setAmountDue(bill.getAmountDue());
+                    updatedBill.setCategories(bill.getCategories());
+                    updatedBill.setPayStatus(bill.getPayStatus());
+                    return billRepository.save(updatedBill);
+                }).orElseThrow(() ->
+                new IllegalArgumentException()
+        );
+    }
 }
 

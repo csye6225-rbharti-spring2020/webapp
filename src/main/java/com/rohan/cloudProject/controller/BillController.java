@@ -93,7 +93,6 @@ public class BillController {
     public ResponseEntity getBillsByUserId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader) {
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
-            User user = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
@@ -125,7 +124,6 @@ public class BillController {
     public ResponseEntity deleteBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable(value = "id") String billId) {
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
-            User user = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
@@ -143,12 +141,19 @@ public class BillController {
         }
     }
 
+    /**
+     * GET API to fetch the bill by its id. Each Bill is mapped to its respective User.
+     * Basic Auth is done before the bills are fetched for that user.
+     *
+     * @param authHeader
+     * @param billId
+     * @return ResponseEntity
+     */
     @GetMapping("/v1/bill/{id}")
     @ApiOperation("Fetches the Bill by its bill id.")
     public ResponseEntity getBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable(value = "id") String billId) {
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
-            User user = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
@@ -162,6 +167,41 @@ public class BillController {
                 return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
             }
             return new ResponseEntity(bill, HttpStatus.OK);
+        } else {
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * PUT API to update the bill by its id. Each Bill is mapped to its respective User.
+     * Basic Auth is done before the bills are fetched for that user.
+     *
+     * @param authHeader
+     * @param billId
+     * @param bill
+     * @return ResponseEntity
+     */
+    @PutMapping("/v1/bill/{id}")
+    @ApiOperation("Updates the Bill by its bill id.")
+    public ResponseEntity updateBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
+                                         @PathVariable(value = "id") String billId, @Valid @RequestBody Bill bill) {
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
+            String userId = null;
+            try {
+                userId = basicAuthentication.authorize(authHeader);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity("Authentication Error", HttpStatus.UNAUTHORIZED);
+            }
+
+            Bill updatedBill;
+            try {
+                updatedBill = billService.updateBillByBillId(bill, billId);
+            } catch (IllegalArgumentException illegalArgumentSection) {
+                return new ResponseEntity("Please supply all the required fields to update the bill", HttpStatus.BAD_REQUEST);
+            } catch (Exception ex) {
+                return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity(updatedBill, HttpStatus.OK);
         } else {
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
