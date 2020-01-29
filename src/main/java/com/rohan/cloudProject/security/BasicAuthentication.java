@@ -38,7 +38,7 @@ public class BasicAuthentication {
      * @param authHeader
      * @return userId
      */
-    public String authorize(String authHeader) {
+    public String authorize(String authHeader) throws IllegalArgumentException {
         Map<String, String> credentials = getCredentials(authHeader);
         String email = credentials.get("email");
         String password = credentials.get("password");
@@ -53,13 +53,17 @@ public class BasicAuthentication {
         }
 
         if (!userExists) {
-            return null;
+            throw new IllegalArgumentException("The Email ID does not exist.");
         }
 
+        int count = 0;
         for (User user : users) {
             if (user.getEmail().equals(email) && passwordMatch(password, user.getPassword())) {
                 return user.getId();
+            } else if (count == users.size() - 1) {
+                throw new IllegalArgumentException("The password entered is incorrect.");
             } else {
+                count++;
                 continue;
             }
         }
@@ -90,8 +94,8 @@ public class BasicAuthentication {
         byte[] decodedCredentials = Base64.getDecoder().decode(base64Token);
         String combinedCredentials = new String(decodedCredentials, StandardCharsets.UTF_8);
         final String[] decodedValues = combinedCredentials.split(":", 2);
-        credentials.put("email", decodedValues[0]);
-        credentials.put("password", decodedValues[1]);
+        credentials.put("email", decodedValues[0].trim());
+        credentials.put("password", decodedValues[1].trim());
         return credentials;
     }
 }
