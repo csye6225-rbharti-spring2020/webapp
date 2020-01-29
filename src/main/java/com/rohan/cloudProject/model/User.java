@@ -12,9 +12,10 @@ import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Set;
 
 /**
- * Entity (Model) class for the Spring Boot Application. Uses LomBok for getters, setters and constructor
+ * User Entity (Model) class for the Spring Boot Application. Uses LomBok for getters, setters and constructor
  * initialization.
  *
  * @author rohan_bharti
@@ -31,8 +32,8 @@ public class User implements Serializable {
      * Id is generated in a UUID format.
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "uuidGenerator")
-    @GenericGenerator(name = "uuidGenerator", strategy = "uuid")
+    @GeneratedValue(generator = "uuidGenerator")
+    @GenericGenerator(name = "uuidGenerator", strategy = "org.hibernate.id.UUIDGenerator")
     @JsonProperty(value = "id", access = JsonProperty.Access.READ_ONLY)
     private String id;
 
@@ -65,6 +66,10 @@ public class User implements Serializable {
     @JsonProperty(value = "account_updated")
     @Temporal(TemporalType.TIMESTAMP)
     private Date accountUpdated;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
+    @JsonProperty(value = "bills", access = JsonProperty.Access.WRITE_ONLY)
+    private Set<Bill> bills;
 
     public User(String firstName, String lastName, String email, String password) {
         this.firstName = firstName;

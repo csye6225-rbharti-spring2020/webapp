@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Service Layer Class for the Spring Boot Application.
+ * User Service Layer Class for the Spring Boot Application.
  *
  * @author rohan_bharti
  */
@@ -116,10 +116,10 @@ public class UserService {
 
         user.setPassword(encryptPassword(passwordSupplied));
         user.setAccountUpdated(new Date());
-        logger.info("User information updated successfully!");
 
         try {
             userRepository.save(user);
+            logger.info("User information updated successfully!");
         } catch (Exception e) {
             return null;
         }
