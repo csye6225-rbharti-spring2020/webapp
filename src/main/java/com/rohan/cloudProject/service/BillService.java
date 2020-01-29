@@ -57,7 +57,6 @@ public class BillService {
 
         for (Bill bill : allBills) {
             if (bill.getUser().getId().equals(userId)) {
-                bill.setUserId(userId);
                 userBills.add(bill);
             }
         }
@@ -75,9 +74,13 @@ public class BillService {
      * @param billId
      * @throws Exception
      */
-    public void deleteById(String billId) throws Exception {
+    public void deleteById(String billId, String userId) throws Exception {
         if (!billRepository.existsById(billId)) {
             throw new Exception("The Bill ID doesn't exist!");
+        }
+
+        if (!billRepository.findById(billId).get().getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("The Bill ID doesn't belong to the User Credentials supplied.");
         }
 
         billRepository.deleteById(billId);
@@ -90,12 +93,18 @@ public class BillService {
      * @return bill
      * @throws Exception
      */
-    public Bill getBillByBillId(String billId) throws Exception {
+    public Bill getBillByBillId(String billId, String userId) throws Exception {
         if (!billRepository.existsById(billId)) {
             throw new Exception("The Bill ID doesn't exist!");
         }
 
-        return billRepository.findById(billId).get();
+        if (!billRepository.findById(billId).get().getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("The Bill ID doesn't belong to the User Credentials supplied.");
+        }
+
+        Bill foundBill = billRepository.findById(billId).get();
+
+        return foundBill;
     }
 
     /**
@@ -106,9 +115,13 @@ public class BillService {
      * @return Bill
      * @throws Exception
      */
-    public Bill updateBillByBillId(Bill bill, String billId) throws Exception {
+    public Bill updateBillByBillId(Bill bill, String billId, String userId) throws Exception {
         if (!billRepository.existsById(billId)) {
             throw new Exception("The Bill ID doesn't exist!");
+        }
+
+        if (!billRepository.findById(billId).get().getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("The Bill ID doesn't belong to the User Credentials supplied.");
         }
 
         return billRepository.findById(billId).map(
@@ -121,7 +134,7 @@ public class BillService {
                     updatedBill.setPayStatus(bill.getPayStatus());
                     return billRepository.save(updatedBill);
                 }).orElseThrow(() ->
-                new IllegalArgumentException()
+                new IllegalStateException()
         );
     }
 }

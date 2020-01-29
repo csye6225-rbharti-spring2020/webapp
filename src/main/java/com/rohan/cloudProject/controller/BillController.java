@@ -60,7 +60,7 @@ public class BillController {
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
-                return new ResponseEntity("Authentication Error", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.BAD_REQUEST);
             }
 
             user = userService.getUserDetails(userId);
@@ -69,7 +69,6 @@ public class BillController {
             }
 
             billToBeSaved.setUser(user);
-            billToBeSaved.setUserId(userId);
             try {
                 Bill bill = billService.createNewBill(billToBeSaved);
                 return new ResponseEntity(bill, HttpStatus.CREATED);
@@ -96,7 +95,7 @@ public class BillController {
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
-                return new ResponseEntity("Authentication Error", HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
             List<Bill> bills;
@@ -127,11 +126,13 @@ public class BillController {
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
-                return new ResponseEntity("Authentication Error", HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
             try {
-                billService.deleteById(billId);
+                billService.deleteById(billId, userId);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             } catch (Exception ex) {
                 return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
             }
@@ -157,12 +158,14 @@ public class BillController {
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
-                return new ResponseEntity("Authentication Error", HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
             Bill bill;
             try {
-                bill = billService.getBillByBillId(billId);
+                bill = billService.getBillByBillId(billId, userId);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             } catch (Exception ex) {
                 return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
             }
@@ -190,16 +193,18 @@ public class BillController {
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
-                return new ResponseEntity("Authentication Error", HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
             Bill updatedBill;
             try {
-                updatedBill = billService.updateBillByBillId(bill, billId);
-            } catch (IllegalArgumentException illegalArgumentSection) {
-                return new ResponseEntity("Please supply all the required fields to update the bill", HttpStatus.BAD_REQUEST);
+                updatedBill = billService.updateBillByBillId(bill, billId, userId);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
+            } catch (IllegalStateException illegalState) {
+                return new ResponseEntity(illegalState.getMessage(), HttpStatus.BAD_REQUEST);
             } catch (Exception ex) {
-                return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
+                return new ResponseEntity(ex.getMessage(), HttpStatus.NOT_FOUND);
             }
             return new ResponseEntity(updatedBill, HttpStatus.OK);
         } else {

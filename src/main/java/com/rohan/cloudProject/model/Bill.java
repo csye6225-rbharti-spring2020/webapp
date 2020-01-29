@@ -89,4 +89,12 @@ public class Bill {
     @JsonProperty(value = "paymentStatus")
     @NotNull
     private PayStatus payStatus;
+
+    public void setUserId() {
+        userId = user.getId();
+    }
+
+    public String getUserId() {
+        return user.getId();
+    }
 }
