@@ -61,7 +61,7 @@ public class UserController {
             User user = userService.getUserDetails(userId);
             return new ResponseEntity<>(user, HttpStatus.OK);
         } else {
-            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.FORBIDDEN);
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }
 
@@ -114,11 +114,11 @@ public class UserController {
             }
 
             if (user == null) {
-                return new ResponseEntity(HttpStatus.BAD_REQUEST);
+                return new ResponseEntity("Enter all the three fields - first_name, last_name and password!", HttpStatus.BAD_REQUEST);
             }
             return new ResponseEntity<>(user, HttpStatus.OK);
         } else {
-            return new ResponseEntity("Please provide Email and Password (Basic Authentication", HttpStatus.FORBIDDEN);
+            return new ResponseEntity("Please provide Email and Password for Basic Authentication", HttpStatus.UNAUTHORIZED);
         }
     }
 
