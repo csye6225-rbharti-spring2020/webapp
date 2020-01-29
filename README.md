@@ -1,5 +1,14 @@
 Spring Boot Bill Tracking Application.
 
+Application Details:
+
+```
+Programming Language: Java
+Framework: Spring Boot
+Database: H2 Database
+CI/CD: CircleCI
+```
+
 Build And Deploy Instructions.
 
 Prerequisites:
