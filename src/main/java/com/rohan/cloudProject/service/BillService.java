@@ -124,6 +124,7 @@ public class BillService {
             throw new IllegalArgumentException("The Bill ID doesn't belong to the User Credentials supplied.");
         }
 
+        Date currentDate = new Date();
         return billRepository.findById(billId).map(
                 updatedBill -> {
                     updatedBill.setVendor(bill.getVendor());
@@ -132,6 +133,7 @@ public class BillService {
                     updatedBill.setAmountDue(bill.getAmountDue());
                     updatedBill.setCategories(bill.getCategories());
                     updatedBill.setPayStatus(bill.getPayStatus());
+                    updatedBill.setBillUpdated(currentDate);
                     return billRepository.save(updatedBill);
                 }).orElseThrow(() ->
                 new IllegalStateException()
