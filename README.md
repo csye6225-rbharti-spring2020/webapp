@@ -39,3 +39,5 @@ The following commands builds, tests and runs the application. After cloning the
 mvn clean install
 mvn spring-boot:run
 ```
+
+--
