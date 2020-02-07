@@ -47,6 +47,10 @@ public class Bill {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private User user;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "file_id", nullable = false)
+    private File billFile;
+
     @Transient
     @JsonProperty(value = "owner_id", access = JsonProperty.Access.READ_ONLY)
     private String userId;
