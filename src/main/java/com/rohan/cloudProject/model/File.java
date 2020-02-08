@@ -1,5 +1,6 @@
 package com.rohan.cloudProject.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,6 +9,8 @@ import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.util.Date;
 
 /**
  * File Entity (Model) class for the Spring Boot Application. Uses LomBok for getters, setters and constructor
@@ -40,9 +43,11 @@ public class File {
     private String storageUrl;
 
     @JsonProperty(value = "upload_date", access = JsonProperty.Access.READ_ONLY)
-    @Temporal(TemporalType.TIMESTAMP)
-    private String uploadDate;
+    @Temporal(TemporalType.DATE)
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @NotNull
+    private Date uploadDate;
 
-    @OneToOne(mappedBy = "billFile", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "billFile")
     private Bill bill;
 }
