@@ -30,7 +30,7 @@ public class FileService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillService.class);
 
-    @Value("/Users/rohan_bharti/fileUploads/")
+    @Value("${file.upload.dir}")
     private String fileUploadPath;
 
     @Autowired
