@@ -49,5 +49,15 @@ public class File {
     private Date uploadDate;
 
     @OneToOne(mappedBy = "billFile")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Bill bill;
+
+    @JsonProperty(value = "user_id", access = JsonProperty.Access.WRITE_ONLY)
+    private String userId;
+
+    @JsonProperty(value = "file_size", access = JsonProperty.Access.WRITE_ONLY)
+    private Long fileSize;
+
+    @JsonProperty(value = "MD5_Hash", access = JsonProperty.Access.WRITE_ONLY)
+    private String md5Hash;
 }

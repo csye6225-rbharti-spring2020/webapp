@@ -1,11 +1,14 @@
 package com.rohan.cloudProject.service;
 
 import com.rohan.cloudProject.model.Bill;
+import com.rohan.cloudProject.model.File;
+import com.rohan.cloudProject.model.exception.StorageException;
 import com.rohan.cloudProject.repository.BillRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,6 +26,9 @@ public class BillService {
 
     @Autowired
     private BillRepository billRepository;
+
+    @Autowired
+    private FileService fileService;
 
     /**
      * Takes in the Bill object, if everything is validated successfully, the user is saved
@@ -134,10 +140,94 @@ public class BillService {
                     updatedBill.setCategories(bill.getCategories());
                     updatedBill.setPayStatus(bill.getPayStatus());
                     updatedBill.setBillUpdated(currentDate);
+                    updatedBill.setBillFile(bill.getBillFile());
                     return billRepository.save(updatedBill);
                 }).orElseThrow(() ->
                 new IllegalStateException()
         );
     }
+
+    /**
+     * After authenticating the user and checking if the bill exists, it creates a File Model object for the Multipart file and
+     * returns it on successful persistence.
+     *
+     * @param billId
+     * @param userId
+     * @param file
+     * @return File
+     * @throws Exception
+     */
+    public File createFileForBill(String billId, String userId, MultipartFile file) throws Exception {
+
+        Bill bill = getBillByBillId(billId, userId);
+
+        if (bill.getBillFile() != null) {
+            throw new StorageException("The Bill already has a File attached!");
+        }
+
+        File storedFile = fileService.createNewFile(file);
+
+        //adding the UserId of the file being stored
+        storedFile.setUserId(userId);
+
+        bill.setBillFile(storedFile);
+        billRepository.save(bill);
+
+        //Fetching the File object after persisting it in the database
+        storedFile = bill.getBillFile();
+
+        return storedFile;
+    }
+
+    /**
+     * After authenticating the user and checking if the bill exists, it checks if the fileId supplied matches the ID of the file
+     * associated with the Bill object. If yes, returns the file details.
+     *
+     * @param billId
+     * @param userId
+     * @param fileId
+     * @return
+     * @throws Exception
+     */
+    public File getFileForBill(String billId, String userId, String fileId) throws Exception {
+
+        Bill bill = getBillByBillId(billId, userId);
+
+        if (bill.getBillFile() == null) {
+            throw new Exception("This Bill has no file attached to it");
+        }
+
+        if (!bill.getBillFile().getFileId().equals(fileId)) {
+            throw new IllegalArgumentException("The File ID doesn't belong to the Bill details provided.");
+        }
+
+        return fileService.getFileById(fileId);
+    }
+
+    /**
+     * After authenticating the user and checking if the bill exists, it checks if the fileId supplied matches the ID of the file
+     * associated with the Bill object. If yes, deletes it.
+     *
+     * @param billId
+     * @param userId
+     * @param fileId
+     */
+    public void deleteFileForBill(String billId, String userId, String fileId) throws Exception {
+
+        Bill bill = getBillByBillId(billId, userId);
+
+        if (bill.getBillFile() == null) {
+            throw new Exception("This Bill has no file attached to it");
+        }
+
+        if (!bill.getBillFile().getFileId().equals(fileId)) {
+            throw new IllegalArgumentException("The File ID doesn't belong to the Bill details provided.");
+        }
+
+        //Setting the File for the bill to null, due to cascading deletes it from the table
+        bill.setBillFile(null);
+        billRepository.save(bill);
+    }
+
 }
 

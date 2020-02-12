@@ -12,9 +12,12 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 /**
@@ -57,9 +60,20 @@ public class FileService {
             storedFile.setStorageUrl(finalFilePath);
             storedFile.setUploadDate(new Date());
 
+            //Storing the MD5 Hash of the file
+            byte[] uploadBytes = file.getBytes();
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            byte[] md5digest = md5.digest(uploadBytes);
+            String md5HashString = new BigInteger(1, md5digest).toString(16);
+            storedFile.setMd5Hash(md5HashString);
+
+            //Storing the size of the file
+            Long fileSize = file.getSize();
+            storedFile.setFileSize(fileSize);
+
             return storedFile;
 
-        } catch (IOException ex) {
+        } catch (IOException | NoSuchAlgorithmException ex) {
             throw new StorageException("The file: " + fileName + "could not be stored successfully!", ex);
         }
 
@@ -83,4 +97,5 @@ public class FileService {
     public File getFileById(String id) {
         return fileRepository.findById(id).get();
     }
+
 }

@@ -1,7 +1,9 @@
 package com.rohan.cloudProject.controller;
 
 import com.rohan.cloudProject.model.Bill;
+import com.rohan.cloudProject.model.File;
 import com.rohan.cloudProject.model.User;
+import com.rohan.cloudProject.model.exception.StorageException;
 import com.rohan.cloudProject.security.BasicAuthentication;
 import com.rohan.cloudProject.service.BillService;
 import com.rohan.cloudProject.service.UserService;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -207,6 +210,93 @@ public class BillController {
                 return new ResponseEntity(ex.getMessage(), HttpStatus.NOT_FOUND);
             }
             return new ResponseEntity(updatedBill, HttpStatus.OK);
+        } else {
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * Upon successful authentication, takes in the Multipart File supplied and stores it with its respective bill.
+     *
+     * @param authHeader
+     * @param billId
+     * @param file
+     * @return
+     */
+    @PostMapping("/v1/bill/{id}/file")
+    @ApiOperation("Stores a new File for the Bill information supplied")
+    public ResponseEntity storeNewFile(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
+                                       @PathVariable(value = "id") String billId, @RequestParam("file") MultipartFile file) {
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
+            String userId = null;
+            try {
+                userId = basicAuthentication.authorize(authHeader);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
+            }
+
+            File toBeSavedFile;
+            try {
+                toBeSavedFile = billService.createFileForBill(billId, userId, file);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
+            } catch (StorageException storageException) {
+                return new ResponseEntity(storageException.getMessage(), HttpStatus.BAD_REQUEST);
+            } catch (Exception ex) {
+                return new ResponseEntity(ex.getMessage(), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity(toBeSavedFile, HttpStatus.OK);
+        } else {
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @GetMapping("/v1/bill/{billId}/file/{fileId}")
+    @ApiOperation("Gets the File details for the Bill stored")
+    public ResponseEntity getFileByFileId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
+                                          @PathVariable(value = "billId") String billId, @PathVariable(value = "fileId") String fileId) {
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
+            String userId = null;
+            try {
+                userId = basicAuthentication.authorize(authHeader);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
+            }
+
+            File file;
+            try {
+                file = billService.getFileForBill(billId, userId, fileId);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
+            } catch (Exception ex) {
+                return new ResponseEntity(ex.getMessage(), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity(file, HttpStatus.OK);
+        } else {
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @DeleteMapping("/v1/bill/{billId}/file/{fileId}")
+    @ApiOperation("Gets the File details for the Bill stored")
+    public ResponseEntity deleteFileByFileId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
+                                             @PathVariable(value = "billId") String billId, @PathVariable(value = "fileId") String fileId) {
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
+            String userId = null;
+            try {
+                userId = basicAuthentication.authorize(authHeader);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
+            }
+
+            try {
+                billService.deleteFileForBill(billId, userId, fileId);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
+            } catch (Exception ex) {
+                return new ResponseEntity("The File for provided Bill ID doesn't exist", HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity(HttpStatus.NO_CONTENT);
         } else {
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
