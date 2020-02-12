@@ -251,6 +251,14 @@ public class BillController {
         }
     }
 
+    /**
+     * Upon successful authentication, takes in the FileId supplied and fetches its information from the database.
+     *
+     * @param authHeader
+     * @param billId
+     * @param fileId
+     * @return
+     */
     @GetMapping("/v1/bill/{billId}/file/{fileId}")
     @ApiOperation("Gets the File details for the Bill stored")
     public ResponseEntity getFileByFileId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
@@ -277,6 +285,15 @@ public class BillController {
         }
     }
 
+    /**
+     * Upon successful authentication, takes in the FileId supplied and deletes it from the database ensuring the bill
+     * attached to it is also updated accordingly.
+     *
+     * @param authHeader
+     * @param billId
+     * @param fileId
+     * @return
+     */
     @DeleteMapping("/v1/bill/{billId}/file/{fileId}")
     @ApiOperation("Gets the File details for the Bill stored")
     public ResponseEntity deleteFileByFileId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,

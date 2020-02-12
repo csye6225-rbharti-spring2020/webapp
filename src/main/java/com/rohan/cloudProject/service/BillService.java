@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -140,7 +142,6 @@ public class BillService {
                     updatedBill.setCategories(bill.getCategories());
                     updatedBill.setPayStatus(bill.getPayStatus());
                     updatedBill.setBillUpdated(currentDate);
-                    updatedBill.setBillFile(bill.getBillFile());
                     return billRepository.save(updatedBill);
                 }).orElseThrow(() ->
                 new IllegalStateException()
@@ -165,10 +166,11 @@ public class BillService {
             throw new StorageException("The Bill already has a File attached!");
         }
 
-        File storedFile = fileService.createNewFile(file);
+        File storedFile = fileService.createNewFile(file, billId);
 
         //adding the UserId of the file being stored
         storedFile.setUserId(userId);
+        storedFile.setBillId(billId);
 
         bill.setBillFile(storedFile);
         billRepository.save(bill);
@@ -197,6 +199,10 @@ public class BillService {
             throw new Exception("This Bill has no file attached to it");
         }
 
+        if (fileService.getFileById(fileId) == null) {
+            throw new Exception("The file doesn't exist.");
+        }
+
         if (!bill.getBillFile().getFileId().equals(fileId)) {
             throw new IllegalArgumentException("The File ID doesn't belong to the Bill details provided.");
         }
@@ -223,6 +229,9 @@ public class BillService {
         if (!bill.getBillFile().getFileId().equals(fileId)) {
             throw new IllegalArgumentException("The File ID doesn't belong to the Bill details provided.");
         }
+
+        File file = fileService.getFileById(fileId);
+        Files.deleteIfExists(Paths.get(file.getStorageUrl() + billId));
 
         //Setting the File for the bill to null, due to cascading deletes it from the table
         bill.setBillFile(null);

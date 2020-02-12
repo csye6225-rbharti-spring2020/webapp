@@ -55,6 +55,9 @@ public class File {
     @JsonProperty(value = "user_id", access = JsonProperty.Access.WRITE_ONLY)
     private String userId;
 
+    @JsonProperty(value = "bill_id", access = JsonProperty.Access.WRITE_ONLY)
+    private String billId;
+
     @JsonProperty(value = "file_size", access = JsonProperty.Access.WRITE_ONLY)
     private Long fileSize;
 

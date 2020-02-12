@@ -42,7 +42,7 @@ public class FileService {
      * @param file
      * @return
      */
-    public File createNewFile(MultipartFile file) {
+    public File createNewFile(MultipartFile file, String billId) {
 
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
 
@@ -51,9 +51,14 @@ public class FileService {
                 throw new StorageException("The File Name is not a valid file name: " + fileName);
             }
 
+            String extension = file.getOriginalFilename().split("\\.")[1];
+            if (!(extension.equalsIgnoreCase("png") || extension.equalsIgnoreCase("pdf") ||
+                    extension.equalsIgnoreCase("jpeg") || extension.equalsIgnoreCase("jpg"))) {
+                throw new StorageException(("The file has to be of the following formats: png, jpeg, jpg, pdf!"));
+            }
+
             String finalFilePath = fileUploadPath + fileName;
-            Files.copy(file.getInputStream(), Paths.get(finalFilePath), StandardCopyOption.REPLACE_EXISTING);
-            logger.info("The file was stored successfully!");
+            Files.copy(file.getInputStream(), Paths.get(finalFilePath + billId), StandardCopyOption.REPLACE_EXISTING);
 
             File storedFile = new File();
             storedFile.setFileName(fileName);
@@ -70,6 +75,8 @@ public class FileService {
             //Storing the size of the file
             Long fileSize = file.getSize();
             storedFile.setFileSize(fileSize);
+
+            logger.info("The file was stored successfully!");
 
             return storedFile;
 
