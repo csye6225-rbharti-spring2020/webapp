@@ -34,6 +34,9 @@ public class UserServiceTest {
     @Mock
     private UserRepository mockUserRepository;
 
+    @Mock
+    private BillService billService;
+
     @Before
     public void init() {
         MockitoAnnotations.initMocks(this);
