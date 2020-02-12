@@ -232,6 +232,7 @@ public class BillService {
 
         File file = fileService.getFileById(fileId);
         Files.deleteIfExists(Paths.get(file.getStorageUrl() + billId));
+        logger.info("File has been successfully deleted physically from the system!");
 
         //Setting the File for the bill to null, due to cascading deletes it from the table
         bill.setBillFile(null);
