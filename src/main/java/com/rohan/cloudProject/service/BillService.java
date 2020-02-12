@@ -91,6 +91,14 @@ public class BillService {
             throw new IllegalArgumentException("The Bill ID doesn't belong to the User Credentials supplied.");
         }
 
+        Bill bill = getBillByBillId(billId, userId);
+        if (bill.getBillFile() != null) {
+            String fileId = bill.getBillFile().getFileId();
+            File file = fileService.getFileById(fileId);
+            Files.deleteIfExists(Paths.get(file.getStorageUrl() + billId));
+            logger.info("File has been successfully deleted physically from the system!");
+        }
+
         billRepository.deleteById(billId);
     }
 
