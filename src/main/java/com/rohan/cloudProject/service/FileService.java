@@ -5,6 +5,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.rohan.cloudProject.model.File;
 import com.rohan.cloudProject.model.exception.StorageException;
 import com.rohan.cloudProject.repository.FileRepository;
@@ -60,90 +61,131 @@ public class FileService {
 
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
 
+        if (fileName.contains("..")) {
+            throw new StorageException("The File Name is not a valid file name: " + fileName);
+        }
+
+        String extension = file.getOriginalFilename().split("\\.")[1];
+        if (!(extension.equalsIgnoreCase("png") || extension.equalsIgnoreCase("pdf") ||
+                extension.equalsIgnoreCase("jpeg") || extension.equalsIgnoreCase("jpg"))) {
+            throw new StorageException(("The file has to be of the following formats: png, jpeg, jpg, pdf!"));
+        }
+
+        File newFile = null;
+
+        if (activeProfile.equals("dev")) {
+            newFile = createNewFileOnLocal(file, billId, fileName);
+        } else if ((activeProfile.equals("aws") && (!bucketName.equals("notAvailable")))) {
+            newFile = createNewFileOnS3Bucket(file, billId, fileName);
+        }
+
+        return newFile;
+    }
+
+    /**
+     * Helper function to store the file on the S3 Bucket in the "aws" profile mode
+     *
+     * @param file
+     * @param billId
+     * @param fileName
+     * @return
+     */
+    private File createNewFileOnS3Bucket(MultipartFile file, String billId, String fileName) {
+        String fileUploadPath = bucketName;
+
+        String fileStoragePath = fileUploadPath;
+        fileName = fileName.concat("/").concat(billId);
+        String finalFilePath = "https://" + fileStoragePath + ".s3.amazonaws.com" + "/" + fileName;
+        PutObjectResult result = null;
+
         try {
-            if (fileName.contains("..")) {
-                throw new StorageException("The File Name is not a valid file name: " + fileName);
+            java.io.File s3BucketFile = convertMultiPartToFile(file);
+            result = uploadFileTos3bucket(fileName, s3BucketFile);
+        } catch (AmazonServiceException ase) {
+            logger.info("Caught an AmazonServiceException from GET requests, rejected reasons:");
+            logger.info("Error Message:    " + ase.getMessage());
+            logger.info("HTTP Status Code: " + ase.getStatusCode());
+            logger.info("AWS Error Code:   " + ase.getErrorCode());
+            logger.info("Error Type:       " + ase.getErrorType());
+            logger.info("Request ID:       " + ase.getRequestId());
+        } catch (AmazonClientException ace) {
+            logger.info("Caught an AmazonClientException: ");
+            logger.info("Error Message: " + ace.getMessage());
+        } catch (IOException ioe) {
+            logger.info("IOE Error Message: " + ioe.getMessage());
+        }
+
+        logger.info("The file was stored successfully on the S3 Bucket!");
+
+        File storedFile = new File();
+        storedFile.setFileName(fileName);
+        storedFile.setMd5Hash(result.getContentMd5());
+        storedFile.setFileSize(result.getMetadata().getContentLength());
+        storedFile.setUploadDate(new Date());
+        storedFile.setStorageUrl(finalFilePath);
+
+        return storedFile;
+    }
+
+
+    /**
+     * Helper method to create a new File on the Local System if the "dev" profile is active
+     *
+     * @param file
+     * @param billId
+     * @return
+     */
+    private File createNewFileOnLocal(MultipartFile file, String billId, String fileName) {
+        fileUploadPath = System.getProperty("user.home");
+
+        String fileStoragePath = fileUploadPath + "/files/";
+        String finalFilePath = null;
+        Path path = Paths.get(fileStoragePath);
+
+        try {
+            if (!Files.exists(path)) {
+                Files.createDirectory(path);
+                logger.info("File storage Directory created");
+            } else {
+                System.out.println("File storage Directory already exists");
             }
 
-            String extension = file.getOriginalFilename().split("\\.")[1];
-            if (!(extension.equalsIgnoreCase("png") || extension.equalsIgnoreCase("pdf") ||
-                    extension.equalsIgnoreCase("jpeg") || extension.equalsIgnoreCase("jpg"))) {
-                throw new StorageException(("The file has to be of the following formats: png, jpeg, jpg, pdf!"));
-            }
+            finalFilePath = fileStoragePath + fileName;
 
-            String finalFilePath = null;
-
-            if (activeProfile.equals("dev")) {
-                fileUploadPath = System.getProperty("user.home");
-
-                String fileStoragePath = fileUploadPath + "/files/";
-
-                Path path = Paths.get(fileStoragePath);
-
-                if (!Files.exists(path)) {
-                    Files.createDirectory(path);
-                    logger.info("File storage Directory created");
-                } else {
-                    System.out.println("File storage Directory already exists");
-                }
-
-                finalFilePath = fileStoragePath + fileName;
-
-                Files.copy(file.getInputStream(), Paths.get(finalFilePath + "-" + billId), StandardCopyOption.REPLACE_EXISTING);
-
-                logger.info("The file was stored successfully on the local FileSystem!");
-            }
-
-            if (activeProfile.equals("aws") && (!bucketName.equals("notAvailable"))) {
-                fileUploadPath = bucketName;
-
-                String fileStoragePath = fileUploadPath;
-                fileName = fileName.concat("/").concat(billId);
-                finalFilePath = "https://" + fileStoragePath + ".s3.amazonaws.com" + "/" + fileName;
-
-                try {
-                    java.io.File s3Bucketfile = convertMultiPartToFile(file);
-                    uploadFileTos3bucket(fileName, s3Bucketfile);
-                } catch (AmazonServiceException ase) {
-                    logger.info("Caught an AmazonServiceException from GET requests, rejected reasons:");
-                    logger.info("Error Message:    " + ase.getMessage());
-                    logger.info("HTTP Status Code: " + ase.getStatusCode());
-                    logger.info("AWS Error Code:   " + ase.getErrorCode());
-                    logger.info("Error Type:       " + ase.getErrorType());
-                    logger.info("Request ID:       " + ase.getRequestId());
-                } catch (AmazonClientException ace) {
-                    logger.info("Caught an AmazonClientException: ");
-                    logger.info("Error Message: " + ace.getMessage());
-                } catch (IOException ioe) {
-                    logger.info("IOE Error Message: " + ioe.getMessage());
-                }
-
-                logger.info("The file was stored successfully on the S3 Bucket!");
-            }
-
-
-            File storedFile = new File();
-            storedFile.setFileName(fileName);
-            storedFile.setStorageUrl(finalFilePath);
-            storedFile.setUploadDate(new Date());
-
-            //Storing the MD5 Hash of the file
-            byte[] uploadBytes = file.getBytes();
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
-            byte[] md5digest = md5.digest(uploadBytes);
-            String md5HashString = new BigInteger(1, md5digest).toString(16);
-            storedFile.setMd5Hash(md5HashString);
-
-            //Storing the size of the file
-            Long fileSize = file.getSize();
-            storedFile.setFileSize(fileSize);
-
-            return storedFile;
-
-        } catch (IOException | NoSuchAlgorithmException ex) {
+            Files.copy(file.getInputStream(), Paths.get(finalFilePath + "-" + billId), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
             throw new StorageException("The file: " + fileName + "could not be stored successfully!", ex);
         }
 
+        logger.info("The file was stored successfully on the local FileSystem!");
+
+        File storedFile = new File();
+        storedFile.setFileName(fileName);
+        storedFile.setStorageUrl(finalFilePath);
+        storedFile.setUploadDate(new Date());
+
+        //Storing the MD5 Hash of the file
+        byte[] uploadBytes = null;
+        try {
+            uploadBytes = file.getBytes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        byte[] md5digest = md5.digest(uploadBytes);
+        String md5HashString = new BigInteger(1, md5digest).toString(16);
+        storedFile.setMd5Hash(md5HashString);
+
+        //Storing the size of the file
+        Long fileSize = file.getSize();
+        storedFile.setFileSize(fileSize);
+
+        return storedFile;
     }
 
     /**
@@ -165,17 +207,35 @@ public class FileService {
         return fileRepository.findById(id).get();
     }
 
+    /**
+     * Converts the MultipartFile to Java.Io.File
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     */
     private java.io.File convertMultiPartToFile(MultipartFile file) throws IOException {
         java.io.File convFile = new java.io.File(file.getOriginalFilename());
         return convFile;
     }
 
-    private void uploadFileTos3bucket(String fileName, java.io.File file) {
-        amazonS3Client.putObject(
+    /**
+     * Uploads the File to the S3 Bucket
+     *
+     * @param fileName
+     * @param file
+     */
+    private PutObjectResult uploadFileTos3bucket(String fileName, java.io.File file) {
+        return amazonS3Client.putObject(
                 new PutObjectRequest(bucketName, fileName, file));
-        //.withCannedAcl(CannedAccessControlList.PublicRead));
     }
 
+    /**
+     * Deletes the file from the S3 Bucket
+     *
+     * @param fileName
+     * @return
+     */
     public boolean deleteFileFromS3Bucket(String fileName) {
         try {
             amazonS3Client.deleteObject(new DeleteObjectRequest(bucketName, fileName));
