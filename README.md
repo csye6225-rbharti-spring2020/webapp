@@ -44,5 +44,5 @@ The following commands are used to deploy the application on an EC2 instance
 
 ```
 mvn package 
-scp ~i ~/.ssh/{key_name} ~/{project_dir}/target/{snapshot} {hostname}@{publicIpv4Addr}:{dir}/
+scp -i ~/.ssh/{key_name} ~/{project_dir}/target/{snapshot} {hostname}@{publicIpv4Addr}:{dir}/
 ```
