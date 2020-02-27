@@ -4,6 +4,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.rohan.cloudProject.model.File;
@@ -18,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -94,13 +96,12 @@ public class FileService {
         String fileUploadPath = bucketName;
 
         String fileStoragePath = fileUploadPath;
-        fileName = fileName.concat("/").concat(billId);
+        fileName = fileName.concat("-").concat(billId);
         String finalFilePath = "https://" + fileStoragePath + ".s3.amazonaws.com" + "/" + fileName;
         PutObjectResult result = null;
 
         try {
-            java.io.File s3BucketFile = convertMultiPartToFile(file);
-            result = uploadFileTos3bucket(fileName, s3BucketFile);
+            uploadFileTos3bucket(fileName, file);
         } catch (AmazonServiceException ase) {
             logger.info("Caught an AmazonServiceException from GET requests, rejected reasons:");
             logger.info("Error Message:    " + ase.getMessage());
@@ -119,8 +120,26 @@ public class FileService {
 
         File storedFile = new File();
         storedFile.setFileName(fileName);
-        storedFile.setMd5Hash(result.getContentMd5());
-        storedFile.setFileSize(result.getMetadata().getContentLength());
+        //Storing the MD5 Hash of the file
+        byte[] uploadBytes = null;
+        try {
+            uploadBytes = file.getBytes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        byte[] md5digest = md5.digest(uploadBytes);
+        String md5HashString = new BigInteger(1, md5digest).toString(16);
+        storedFile.setMd5Hash(md5HashString);
+
+        //Storing the size of the file
+        Long fileSize = file.getSize();
+        storedFile.setFileSize(fileSize);
         storedFile.setUploadDate(new Date());
         storedFile.setStorageUrl(finalFilePath);
 
@@ -208,26 +227,14 @@ public class FileService {
     }
 
     /**
-     * Converts the MultipartFile to Java.Io.File
-     *
-     * @param file
-     * @return
-     * @throws IOException
-     */
-    private java.io.File convertMultiPartToFile(MultipartFile file) throws IOException {
-        java.io.File convFile = new java.io.File(file.getOriginalFilename());
-        return convFile;
-    }
-
-    /**
      * Uploads the File to the S3 Bucket
      *
      * @param fileName
      * @param file
      */
-    private PutObjectResult uploadFileTos3bucket(String fileName, java.io.File file) {
-        return amazonS3Client.putObject(
-                new PutObjectRequest(bucketName, fileName, file));
+    private void uploadFileTos3bucket(String fileName, MultipartFile file) throws IOException {
+        InputStream is = file.getInputStream();
+        amazonS3Client.putObject(new PutObjectRequest(bucketName, fileName, is, new ObjectMetadata()));
     }
 
     /**
