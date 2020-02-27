@@ -50,7 +50,7 @@ public class FileService {
     @Value("${spring.profiles.active}")
     private String activeProfile;
 
-    @Value("${amazon.s3.bucketName}")
+    @Value("${amazon.s3.bucketName:#{null}}")
     private String bucketName;
 
     /**
