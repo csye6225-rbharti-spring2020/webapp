@@ -7,6 +7,7 @@ import com.rohan.cloudProject.repository.BillRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +32,9 @@ public class BillService {
 
     @Autowired
     private FileService fileService;
+
+    @Value("${spring.profiles.active}")
+    private String activeProfile;
 
     /**
      * Takes in the Bill object, if everything is validated successfully, the user is saved
@@ -95,8 +99,17 @@ public class BillService {
         if (bill.getBillFile() != null) {
             String fileId = bill.getBillFile().getFileId();
             File file = fileService.getFileById(fileId);
-            Files.deleteIfExists(Paths.get(file.getStorageUrl() + billId));
-            logger.info("File has been successfully deleted physically from the system!");
+            if (activeProfile.equals("dev")) {
+                Files.deleteIfExists(Paths.get(file.getStorageUrl() + "-" + billId));
+                logger.info("File has been successfully deleted physically from the system!");
+            }
+
+            if (activeProfile.equals("aws")) {
+                boolean isDeleted = fileService.deleteFileFromS3Bucket(file.getFileName());
+                if (isDeleted) {
+                    logger.info("File has been successfully deleted physically from the S3 Bucket!");
+                }
+            }
         }
 
         billRepository.deleteById(billId);
@@ -239,8 +252,18 @@ public class BillService {
         }
 
         File file = fileService.getFileById(fileId);
-        Files.deleteIfExists(Paths.get(file.getStorageUrl() + billId));
-        logger.info("File has been successfully deleted physically from the system!");
+
+        if (activeProfile.equals("dev")) {
+            Files.deleteIfExists(Paths.get(file.getStorageUrl() + "-" + billId));
+            logger.info("File has been successfully deleted physically from the system!");
+        }
+
+        if (activeProfile.equals("aws")) {
+            boolean isDeleted = fileService.deleteFileFromS3Bucket(file.getFileName());
+            if (isDeleted) {
+                logger.info("File has been successfully deleted physically from the S3 Bucket!");
+            }
+        }
 
         //Setting the File for the bill to null, due to cascading deletes it from the table
         bill.setBillFile(null);
