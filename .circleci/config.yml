@@ -1,7 +1,6 @@
 version: 2.0
 
 jobs:
-
   pr:
     docker:
       - image: circleci/openjdk:8-jdk-stretch
@@ -9,27 +8,92 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Clean Install and run Tests
+          name: Do a clean install and run unit tests
           command: mvn clean install
 
-  build:
+  build_deploy:
     docker:
       - image: circleci/openjdk:8-jdk-stretch
     working_directory: ~/webapp
     steps:
       - checkout
+      - run:
+          name: Install AWS cli
+          command: |
+            python --version
+            cat /etc/issue
+            sudo apt-get update -y
+            sudo apt-get install -y python-pip
+            sudo pip install awscli -y
+            sudo pip install aws-sam-cli -y
+      - run:
+          name: Configure AWS cli
+          command: |
+            aws --version
+            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+            aws configure set default.region ${AWS_DEFAULT_REGION}
+            aws configure list
       - restore_cache:
           key: webapp-{{ checksum "pom.xml" }}
-      - run: mvn dependency:go-offline
+      - run:
+          name: Get all the dependencies
+          command: mvn dependency:go-offline
       - save_cache:
           paths:
             - ~/.m2
           key: webapp-{{ checksum "pom.xml" }}
-      - run: mvn package
+      - run:
+          name: Builds the jar file for the webapp
+          command: |
+            mvn clean package
+            pwd
+            ls -al
+            ls -al target/
       - store_test_results:
           path: target/surefire-reports
       - store_artifacts:
           path: target/webapp-0.0.1-SNAPSHOT.jar
+      - run:
+          name: Create a zip file to be deployed on the S3 Bucket
+          command: |
+            mkdir codedeploy_artifact
+            cd codedeploy
+            sudo chmod +x *.sh
+            ls -al
+            cd ..
+            sudo zip -r csye6225-webapp-${CIRCLE_BUILD_NUM}.zip target/ROOT.jar codedeploy/*.s appspec.yml
+            pwd
+            ls -al
+            sudo mv csye6225-webapp-${CIRCLE_BUILD_NUM}.zip codedeploy_artifact/
+            ls -al
+            pwd
+            cd codedeploy_artifact
+            pwd
+            ls -al
+            cd ..
+            pwd
+            ls -al
+      - run:
+          name: Push the new revision of the application to S3
+          command: |
+            aws deploy push \
+              --application-name ${CODEDEPLOY_APPLICATION_NAME} \
+              --description "This is a new revision for the application" \
+              --ignore-hidden-files \
+              --s3-location s3://${S3_CODEDEPLOY_BUCKET}/csye6225-webapp-${CIRCLE_BUILD_NUM}.zip \
+              --source
+      - run:
+          name: Fetch from S3 and Deploy the application to codedeploy
+          command: |
+            aws deploy create-deployment \ 
+              --application-name ${CODEDEPLOY_APPLICATION_NAME} \
+              --deployment-config-name CodeDeployDefault.AllAtOnce \
+              --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \
+              --description "CSYE-6225 - CodeDeploy" \
+              --s3-location bucket=${S3_CODEDEPLOY_BUCKET},bundleType=zip,key=csye6225-webapp-${CIRCLE_BUILD_NUM}.zip \
+              --region ${AWS_REGION} \
+              --output json
 
 workflows:
   version: 2
@@ -38,7 +102,9 @@ workflows:
       - pr
   build_and_deploy:
     jobs:
-      - build:
+      - build_deploy:
           filters:
             branches:
-              only: master
+              only:
+                - master
+                - assignment7
