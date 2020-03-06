@@ -53,7 +53,7 @@ jobs:
       - store_test_results:
           path: target/surefire-reports
       - store_artifacts:
-          path: target/webapp-0.0.1-SNAPSHOT.jar
+          path: target/ROOT.jar
       - run:
           name: Create a zip file to be deployed on the S3 Bucket
           command: |

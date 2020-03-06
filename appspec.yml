@@ -1,0 +1,24 @@
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /home/ubuntu/myApp
+
+hooks:
+  ApplicationStart:
+    - location: ./myApp/codeDeployScripts/start.sh
+      timeout: 20
+      runas: ubuntu
+  ApplicationStop:
+    - location: ./myApp/codeDeployScripts/stop.sh
+      timeout: 20
+      runas: ubuntu
+  BeforeInstall:
+    - location: ./myApp/codeDeployScripts/before.sh
+      timeout: 20
+      runas: ubuntu
+  ValidateService:
+    - location: ./myApp/codeDeployScripts/validate.sh
+      timeout: 60
+      runas: ubuntu
