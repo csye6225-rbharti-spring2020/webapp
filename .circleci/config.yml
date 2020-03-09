@@ -97,8 +97,8 @@ jobs:
           name: List the deployments
           command: |
             aws deploy list-deployments --application-name ${CODEDEPLOY_APPLICATION_NAME} \ 
-            --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \ 
-            --query "deployments" --output text
+              --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \ 
+              --query "deployments" --output text
 
 workflows:
   version: 2
