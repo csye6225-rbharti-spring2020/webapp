@@ -99,8 +99,7 @@ jobs:
             aws deploy list-deployments --region ${AWS_DEFAULT_REGION} \ 
               --application-name ${CODEDEPLOY_APPLICATION_NAME} \ 
               --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \ 
-              --include-only-statuses "Succeeded" \
-              --output json
+              --include-only-statuses "Succeeded"
 
 workflows:
   version: 2
