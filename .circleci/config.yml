@@ -58,7 +58,7 @@ jobs:
           name: Create a zip file to be deployed on the S3 Bucket
           command: |
             mkdir codedeploy_artifact
-            cd codedeploy
+            cd codedeploy_artifact
             sudo chmod +x *.sh
             ls -al
             cd ..
