@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 echo "Waiting for 10 seconds to check the health of the application"
 sleep 10

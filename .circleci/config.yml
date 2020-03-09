@@ -62,7 +62,7 @@ jobs:
             cd codedeploy_artifact
             ls -al
             cd ..
-            sudo zip -r csye6225-webapp-${CIRCLE_BUILD_NUM}.zip target/ROOT.jar codeDeployScripts/*.sh appspec.yml
+            sudo zip csye6225-webapp-${CIRCLE_BUILD_NUM}.zip target/ROOT.jar codeDeployScripts/*.sh appspec.yml
             pwd
             ls -al
             sudo mv csye6225-webapp-${CIRCLE_BUILD_NUM}.zip codedeploy_artifact/
@@ -96,9 +96,11 @@ jobs:
       - run:
           name: List the deployments
           command: |
-            aws deploy list-deployments --application-name ${CODEDEPLOY_APPLICATION_NAME} \ 
+            aws deploy list-deployments --region ${AWS_DEFAULT_REGION} \ 
+              --application-name ${CODEDEPLOY_APPLICATION_NAME} \ 
               --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \ 
-              --query "deployments" --output text
+              --include-only-statuses "Succeeded" \
+              --output json
 
 workflows:
   version: 2
