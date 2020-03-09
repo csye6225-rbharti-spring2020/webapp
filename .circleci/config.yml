@@ -86,8 +86,7 @@ jobs:
       - run:
           name: Fetch from S3 and Deploy the application to codedeploy
           command: |
-            aws deploy create-deployment \ 
-              --application-name ${CODEDEPLOY_APPLICATION_NAME} \
+            aws deploy create-deployment --application-name ${CODEDEPLOY_APPLICATION_NAME} \
               --deployment-config-name CodeDeployDefault.AllAtOnce \
               --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \
               --description "CSYE-6225 - CodeDeploy" \
