@@ -57,12 +57,12 @@ jobs:
       - run:
           name: Create a zip file to be deployed on the S3 Bucket
           command: |
+            sudo chmod +x codeDeployScripts/*.sh
             mkdir codedeploy_artifact
             cd codedeploy_artifact
-            sudo chmod +x *.sh
             ls -al
             cd ..
-            sudo zip -r csye6225-webapp-${CIRCLE_BUILD_NUM}.zip target/ROOT.jar codedeploy/*.s appspec.yml
+            sudo zip -r csye6225-webapp-${CIRCLE_BUILD_NUM}.zip target/ROOT.jar codeDeployScripts/*.sh appspec.yml
             pwd
             ls -al
             sudo mv csye6225-webapp-${CIRCLE_BUILD_NUM}.zip codedeploy_artifact/
