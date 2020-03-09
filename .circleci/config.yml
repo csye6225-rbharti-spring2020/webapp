@@ -94,7 +94,7 @@ jobs:
               --s3-location bucket=${S3_CODEDEPLOY_BUCKET},key=csye6225-webapp-${CIRCLE_BUILD_NUM}.zip,bundleType=zip \
               --output json
       - run:
-          name: List the deployments
+          name: List the successful deployments
           command: |
             aws deploy list-deployments --region ${AWS_DEFAULT_REGION} \ 
               --application-name ${CODEDEPLOY_APPLICATION_NAME} \ 
