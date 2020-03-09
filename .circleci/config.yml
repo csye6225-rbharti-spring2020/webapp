@@ -23,7 +23,7 @@ jobs:
             python --version
             cat /etc/issue
             sudo apt-get update -y
-            sudo apt-get install -y python-pip
+            sudo apt-get install -y python-pip -y
             sudo pip install awscli -y
             sudo pip install aws-sam-cli -y
       - run:
