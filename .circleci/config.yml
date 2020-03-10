@@ -62,11 +62,11 @@ jobs:
             cd codedeploy_artifact
             ls -al
             cd ..
-            sudo zip csye6225-webapp-${CIRCLE_BUILD_NUM}.zip target/ROOT.jar codeDeployScripts/*.sh appspec.yml
             pwd
             ls -al
-            sudo mv csye6225-webapp-${CIRCLE_BUILD_NUM}.zip codedeploy_artifact/
-            ls -al
+            sudo cp appspec.yml codedeploy_artifact/
+            sudo cp -r codeDeployScripts codedeploy_artifact/
+            sudo cp /target/ROOT.jar codedeploy_artifact/
             pwd
             cd codedeploy_artifact
             pwd
