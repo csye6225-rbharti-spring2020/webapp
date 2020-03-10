@@ -5,15 +5,6 @@ files:
   - source: /
     destination: /home/ubuntu/myApp
 
-permissions:
-  - object: /home/ubuntu/myApp
-    pattern: "**"
-    owner: root
-    group: root
-    mode: 755
-    type:
-      - file
-
 hooks:
   ApplicationStart:
     - location: ./myApp/codeDeployScripts/start.sh
