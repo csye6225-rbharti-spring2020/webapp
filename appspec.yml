@@ -9,16 +9,16 @@ hooks:
   ApplicationStart:
     - location: ./codeDeployScripts/start.sh
       timeout: 20
-      runas: ubuntu
+      runas: root
   ApplicationStop:
     - location: ./codeDeployScripts/stop.sh
       timeout: 20
-      runas: ubuntu
+      runas: root
   BeforeInstall:
     - location: ./codeDeployScripts/before.sh
       timeout: 20
-      runas: ubuntu
+      runas: root
   ValidateService:
     - location: ./codeDeployScripts/validate.sh
       timeout: 60
-      runas: ubuntu
+      runas: root

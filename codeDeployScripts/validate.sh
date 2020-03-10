@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "Waiting for 10 seconds to check the health of the application"
-sleep 40
+echo "Waiting for 20 seconds to check the health of the application"
+sleep 20
 
 response_code=$(sudo curl --write-out %{http_code} --silent --output /dev/null http://localhost:8080/actuator/health)
 
