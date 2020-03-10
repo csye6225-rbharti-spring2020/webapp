@@ -66,7 +66,7 @@ jobs:
             ls -al
             sudo cp appspec.yml codedeploy_artifact/
             sudo cp -r codeDeployScripts codedeploy_artifact/
-            sudo cp /target/ROOT.jar codedeploy_artifact/
+            sudo cp ./target/ROOT.jar codedeploy_artifact/
             pwd
             cd codedeploy_artifact
             pwd
