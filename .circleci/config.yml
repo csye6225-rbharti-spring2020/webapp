@@ -96,9 +96,9 @@ jobs:
       - run:
           name: List the successful deployments
           command: |
-            aws --region ${AWS_DEFAULT_REGION} deploy list-deployments \ 
-              --application-name ${CODEDEPLOY_APPLICATION_NAME} \ 
-              --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \ 
+            aws --region ${AWS_DEFAULT_REGION} deploy list-deployments \
+              --application-name ${CODEDEPLOY_APPLICATION_NAME} \
+              --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \
               --include-only-statuses "Succeeded"
 
 workflows:
