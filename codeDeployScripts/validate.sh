@@ -1,12 +1,14 @@
 #!/bin/bash
 
-while [ true ]
-do
-    if [ "$(curl -s http://localhost:8080/actuator/health)" = '{"status":"UP"}' ]
-    then
-        exit 0
-    else
-        echo "check server is running?"
-        sleep 3s
-    fi
-done
+echo "Waiting for 20 seconds to check the health of the application"
+sleep 20
+
+response_code=$(sudo curl --write-out %{http_code} --silent --output /dev/null http://localhost:8080/actuator/health)
+
+if [[ "$response_code" -ne 200 ]] ; then
+  echo "The application is responding with $response_code"
+  exit 1
+else
+  echo "Actuator Health Endpoint Worked Successfully - $response_code"
+  exit 0
+fi
