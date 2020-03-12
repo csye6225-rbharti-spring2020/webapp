@@ -6,7 +6,6 @@ do
     then
         exit 0
     else
-        echo "$(curl -s http://localhost:8080/actuator/health)"
         echo "check server is running?"
         sleep 3s
     fi
