@@ -16,9 +16,5 @@ hooks:
       runas: root
   BeforeInstall:
     - location: ./codeDeployScripts/before.sh
-      timeout: 20
-      runas: root
-  ValidateService:
-    - location: ./codeDeployScripts/validate.sh
       timeout: 60
       runas: root
