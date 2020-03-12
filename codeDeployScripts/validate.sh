@@ -3,12 +3,13 @@
 echo "Waiting for 20 seconds to check the health of the application"
 sleep 20
 
-response_code=$(sudo curl --write-out %{http_code} --silent --output /dev/null http://localhost:8080/actuator/health)
+res=`curl -s --head http://localhost:8080/actuator/health | head -n 1 | grep -c HTTP/1.1 200 OK`
 
-if [[ "$response_code" -ne 200 ]] ; then
-  echo "The application is responding with $response_code"
-  exit 1
+if [ $res -eq 1 ]
+then
+MSG = " OKAY"
+exit 0
 else
-  echo "Actuator Health Endpoint Worked Successfully - $response_code"
-  exit 0
+MSG = " NOT OKAY"
+exit 1
 fi
