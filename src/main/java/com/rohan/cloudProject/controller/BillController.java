@@ -90,7 +90,7 @@ public class BillController {
      * @param authHeader
      * @return ResponseEntity
      */
-    @GetMapping("/v1/bills")
+    @GetMapping("/v2/bills")
     @ApiOperation("Gets all the bills for the user")
     public ResponseEntity getBillsByUserId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader) {
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
