@@ -1,5 +1,5 @@
 #!/bin/bash
 
-source /etc/profile.d/envvariable.sh
 cd /home/ubuntu/myApp/
-java -jar ROOT.jar
+source /etc/profile.d/envvariable.sh
+java -jar ROOT.jar 
