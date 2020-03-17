@@ -46,7 +46,7 @@ jobs:
             echo "Changing directory to codedeploy_artifact"
             cd codedeploy_artifact
             echo "Copying all .sh files from ../scripts directory to the codedeploy_artifact"
-            cp ../codeDeployScripts/*.sh .
+            cp ../codeDeployScripts/afterInstall.sh .
             echo "Copying all .yml files from ../ directory to the codedeploy_artifact"
             cp ../*.yml .
             echo "Copying the jar file from ../target/demo-0.0.1-SNAPSHOT.jar to the codedeploy_artifact"
