@@ -12,7 +12,7 @@ fi
 
 logsDir="/var/log/aws/codedeploy-agent"
 
-if [-d $logsDir ] ; then
+if [ -d $logsDir ] ; then
     cd $logsDir
     sudo rm *.log
     ls -al
