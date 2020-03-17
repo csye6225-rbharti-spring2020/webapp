@@ -2,4 +2,4 @@
 
 source /etc/profile.d/envvariable.sh
 cd /home/ubuntu/myApp/
-java -jar ROOT.jar
+nohup java -jar ROOT.jar & tail -f nohup.out
