@@ -3,22 +3,10 @@ os: linux
 
 files:
   - source: /
-    destination: /home/ubuntu/myApp
+    destination: /home/ubuntu/webapp/
 
 hooks:
-  ApplicationStart:
-    - location: ./start.sh
-      timeout: 60
-      runas: ubuntu
-  ApplicationStop:
-    - location: ./stop.sh
-      timeout: 60
-      runas: ubuntu
-  BeforeInstall:
-    - location: ./before.sh
-      timeout: 60
-      runas: ubuntu
-  ValidateService:
-    - location: ./validate.sh
-      timeout: 60
+  AfterInstall:
+    - location: ./afterInstall.sh
+      timeout: 180
       runas: ubuntu
