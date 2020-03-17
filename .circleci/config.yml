@@ -3,7 +3,7 @@ version: 2.0
 jobs:
   pr:
     docker:
-      - image: circleci/openjdk:13-buster-node-browsers-legacy
+      - image: circleci/openjdk:11.0.1-jdk-stretch
     working_directory: ~/webapp
     steps:
       - checkout
@@ -13,73 +13,59 @@ jobs:
 
   build_deploy:
     docker:
-      - image: circleci/openjdk:13-buster-node-browsers-legacy
+      - image: circleci/openjdk:11.0.1-jdk-stretch
     working_directory: ~/webapp
     steps:
       - checkout
       - run:
-          name: Install AWS cli
+          name: Build Artifact
           command: |
-            python --version
-            cat /etc/issue
-            sudo apt-get update -y
-            sudo apt-get install -y python-pip 
-            sudo pip install awscli 
-            sudo pip install aws-sam-cli
-      - run:
-          name: Configure AWS cli
-          command: |
-            aws --version
-            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
-            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
-            aws configure set default.region ${AWS_DEFAULT_REGION}
-            aws configure list
-      - run:
-          name: Builds the jar file for the webapp
-          command: |
+            ls -al
+            echo "Building the artifact with Maven"
             mvn clean install
-            pwd
+            cd target
             ls -al
-            ls -al target/
+            cd ../..
       - run:
-          name: Create a zip file to be deployed on the S3 Bucket
+          name: Zip Artifact
           command: |
-            sudo chmod +x codeDeployScripts/*.sh
-            mkdir codedeploy_artifact
-            cd codedeploy_artifact
+            echo "current build number is ${CIRCLE_BUILD_NUM}"
+            pwd
+            echo "current directory content"
             ls -al
+            echo "Making the codedeploy_artifact directory"
+            mkdir -p codedeploy_artifact
+            echo "Changing directory to codedeploy_artifact"
+            cd codedeploy_artifact
+            echo "Copying all .sh files from ../scripts directory to the codedeploy_artifact"
+            cp ../codeDeployScripts/*.sh .
+            echo "Copying all .yml files from ../ directory to the codedeploy_artifact"
+            cp ../*.yml .
+            echo "Copying the jar file from ../target/demo-0.0.1-SNAPSHOT.jar to the codedeploy_artifact"
+            cp ../target/cloudproject-0.0.1-SNAPSHOT.jar .
+            echo "current directory content"
+            ls -al
+            echo "Zipping all files in the codedeploy_artifact directory"
+            zip -r csye6255-webapp-${CIRCLE_BUILD_NUM}.zip .
+            ls -al
+            pwd
+            echo "Changing directory to root"
             cd ..
             pwd
             ls -al
-            sudo cp appspec.yml codedeploy_artifact/
-            sudo cp -r codeDeployScripts codedeploy_artifact/
-            sudo cp ./target/cloudproject-0.0.1-SNAPSHOT.jar codedeploy_artifact/
-            pwd
+      - run:
+          name: Upload Artifact to S3
+          command: |
+            echo "Uploading Artifact to S3 bucket ${CODE_DEPLOY_S3_BUCKET}"
             cd codedeploy_artifact
-            pwd
-            ls -al
+            aws s3 cp csye6255-webapp-${CIRCLE_BUILD_NUM}.zip s3://${S3_CODEDEPLOY_BUCKET}
             cd ..
-            pwd
-            ls -al
       - run:
-          name: Push the new revision of the application to S3
+          name: Make CodeDeploy API call
           command: |
-            aws deploy push \
-              --application-name ${CODEDEPLOY_APPLICATION_NAME} \
-              --description "This is a new revision for the application" \
-              --ignore-hidden-files \
-              --s3-location s3://${S3_CODEDEPLOY_BUCKET}/csye6225-webapp-${CIRCLE_BUILD_NUM}.zip \
-              --source ./codedeploy_artifact/
-      - run:
-          name: Fetch from S3 and Deploy the application to codedeploy
-          command: |
-            aws deploy create-deployment --application-name ${CODEDEPLOY_APPLICATION_NAME} \
-              --deployment-config-name CodeDeployDefault.AllAtOnce \
-              --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} \
-              --description "CSYE-6225 - CodeDeploy" \
-              --region ${AWS_DEFAULT_REGION} \
-              --s3-location bucket=${S3_CODEDEPLOY_BUCKET},key=csye6225-webapp-${CIRCLE_BUILD_NUM}.zip,bundleType=zip \
-              --output json
+            aws configure set region ${AWS_REGION}
+            echo "Calling CodeDeploy Agent to pick the artifact and deploy on EC2 instance"
+            aws deploy create-deployment --application-name ${CODEDEPLOY_APPLICATION_NAME} --deployment-group-name ${CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME} --s3-location bucket=${S3_CODEDEPLOY_BUCKET},bundleType=zip,key=csye6255-webapp-${CIRCLE_BUILD_NUM}.zip
 
 workflows:
   version: 2
