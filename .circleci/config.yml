@@ -34,15 +34,6 @@ jobs:
             aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
             aws configure set default.region ${AWS_DEFAULT_REGION}
             aws configure list
-      - restore_cache:
-          key: webapp-{{ checksum "pom.xml" }}
-      - run:
-          name: Get all the dependencies
-          command: mvn dependency:go-offline
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: webapp-{{ checksum "pom.xml" }}
       - run:
           name: Builds the jar file for the webapp
           command: |
@@ -50,10 +41,6 @@ jobs:
             pwd
             ls -al
             ls -al target/
-      - store_test_results:
-          path: target/surefire-reports
-      - store_artifacts:
-          path: target/ROOT.jar
       - run:
           name: Create a zip file to be deployed on the S3 Bucket
           command: |
