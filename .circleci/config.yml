@@ -3,7 +3,7 @@ version: 2.0
 jobs:
   pr:
     docker:
-      - image: circleci/openjdk:8-jdk-stretch
+      - image: circleci/openjdk:13-buster-node-browsers-legacy
     working_directory: ~/webapp
     steps:
       - checkout
@@ -13,7 +13,7 @@ jobs:
 
   build_deploy:
     docker:
-      - image: circleci/openjdk:8-jdk-stretch
+      - image: circleci/openjdk:13-buster-node-browsers-legacy
     working_directory: ~/webapp
     steps:
       - checkout
