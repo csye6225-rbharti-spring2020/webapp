@@ -46,7 +46,7 @@ jobs:
       - run:
           name: Builds the jar file for the webapp
           command: |
-            mvn package
+            mvn clean install
             pwd
             ls -al
             ls -al target/
