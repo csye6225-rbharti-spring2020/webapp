@@ -7,9 +7,12 @@ import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
+import com.google.common.base.Stopwatch;
+import com.rohan.cloudProject.configuration.MetricsConstants;
 import com.rohan.cloudProject.model.File;
 import com.rohan.cloudProject.model.exception.StorageException;
 import com.rohan.cloudProject.repository.FileRepository;
+import com.timgroup.statsd.StatsDClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * File Service Layer Class for the Spring Boot Application.
@@ -52,6 +56,12 @@ public class FileService {
 
     @Value("${amazon.s3.bucketName:#{null}}")
     private String bucketName;
+
+    /**
+     * Autowired statsDClient.
+     */
+    @Autowired
+    private StatsDClient statsDClient;
 
     /**
      * Takes in the Multipart file. Performs all the necessary validations and returns the created File Object to be saved.
@@ -101,7 +111,10 @@ public class FileService {
         PutObjectResult result = null;
 
         try {
+            Stopwatch stopwatchS3 = Stopwatch.createStarted();
             uploadFileTos3bucket(fileName, file);
+            stopwatchS3.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_S3_FILE_UPLOAD, stopwatchS3.elapsed(TimeUnit.MILLISECONDS));
         } catch (AmazonServiceException ase) {
             logger.info("Caught an AmazonServiceException from GET requests, rejected reasons:");
             logger.info("Error Message:    " + ase.getMessage());
@@ -223,7 +236,11 @@ public class FileService {
      * @return
      */
     public File getFileById(String id) {
-        return fileRepository.findById(id).get();
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        File file = fileRepository.findById(id).get();
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_FILE_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+        return file;
     }
 
     /**
@@ -245,7 +262,10 @@ public class FileService {
      */
     public boolean deleteFileFromS3Bucket(String fileName) {
         try {
+            Stopwatch stopwatchS3 = Stopwatch.createStarted();
             amazonS3Client.deleteObject(new DeleteObjectRequest(bucketName, fileName));
+            stopwatchS3.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_S3_FILE_DELETE, stopwatchS3.elapsed(TimeUnit.MILLISECONDS));
             logger.info("File deleted successfully from the S3 Bucket");
             return true;
         } catch (Exception e) {

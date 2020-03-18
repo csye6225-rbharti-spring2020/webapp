@@ -1,9 +1,12 @@
 package com.rohan.cloudProject.service;
 
+import com.google.common.base.Stopwatch;
+import com.rohan.cloudProject.configuration.MetricsConstants;
 import com.rohan.cloudProject.model.Bill;
 import com.rohan.cloudProject.model.File;
 import com.rohan.cloudProject.model.exception.StorageException;
 import com.rohan.cloudProject.repository.BillRepository;
+import com.timgroup.statsd.StatsDClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Bill Service Layer Class for the Spring Boot Application.
@@ -37,6 +41,12 @@ public class BillService {
     private String activeProfile;
 
     /**
+     * Autowired statsDClient.
+     */
+    @Autowired
+    private StatsDClient statsDClient;
+
+    /**
      * Takes in the Bill object, if everything is validated successfully, the user is saved
      * to the database with having Many to One mapping to its User.
      *
@@ -53,7 +63,11 @@ public class BillService {
         }
 
         logger.info("Bill has been successfully saved.");
-        return billRepository.save(billToBeSaved);
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        Bill bill = billRepository.save(billToBeSaved);
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_BILL_SAVE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+        return bill;
     }
 
     /**
@@ -65,7 +79,11 @@ public class BillService {
      */
     public List<Bill> getAllBillsByUserId(String userId) {
         List<Bill> userBills = new ArrayList<>();
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
         List<Bill> allBills = billRepository.findAll();
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_BILLS_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
         for (Bill bill : allBills) {
             if (bill.getUser().getId().equals(userId)) {
@@ -115,7 +133,10 @@ public class BillService {
 
         logger.info("Bill " + billId + " has been successfully deleted with its attached file");
 
+        Stopwatch stopwatch = Stopwatch.createStarted();
         billRepository.deleteById(billId);
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_BILL_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
     /**
@@ -134,7 +155,10 @@ public class BillService {
             throw new IllegalArgumentException("The Bill ID doesn't belong to the User Credentials supplied.");
         }
 
+        Stopwatch stopwatch = Stopwatch.createStarted();
         Bill foundBill = billRepository.findById(billId).get();
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_BILL_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
         logger.info("Retrieved Bill for the User: " + userId);
 
@@ -169,7 +193,11 @@ public class BillService {
                     updatedBill.setPayStatus(bill.getPayStatus());
                     updatedBill.setBillUpdated(currentDate);
                     logger.info("Successfully updated the Bill with the new information supplied for Bill: " + billId);
-                    return billRepository.save(updatedBill);
+                    Stopwatch stopwatch = Stopwatch.createStarted();
+                    Bill newBill = billRepository.save(updatedBill);
+                    stopwatch.stop();
+                    statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_BILL_SAVE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                    return newBill;
                 }).orElseThrow(() ->
                 new IllegalStateException()
         );
@@ -200,7 +228,11 @@ public class BillService {
         storedFile.setBillId(billId);
 
         bill.setBillFile(storedFile);
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
         billRepository.save(bill);
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_FILE_SAVE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
         //Fetching the File object after persisting it in the database
         storedFile = bill.getBillFile();
@@ -280,7 +312,10 @@ public class BillService {
 
         logger.info("Deleted the Bill: " + billId + " successfully");
 
+        Stopwatch stopwatch = Stopwatch.createStarted();
         billRepository.save(bill);
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_FILE_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
 }

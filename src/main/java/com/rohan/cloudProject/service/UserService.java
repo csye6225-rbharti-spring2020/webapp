@@ -1,7 +1,10 @@
 package com.rohan.cloudProject.service;
 
+import com.google.common.base.Stopwatch;
+import com.rohan.cloudProject.configuration.MetricsConstants;
 import com.rohan.cloudProject.model.User;
 import com.rohan.cloudProject.repository.UserRepository;
+import com.timgroup.statsd.StatsDClient;
 import org.passay.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +16,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,6 +35,12 @@ public class UserService {
      */
     @Autowired
     private UserRepository userRepository;
+
+    /**
+     * Autowired statsDClient.
+     */
+    @Autowired
+    private StatsDClient statsDClient;
 
     /**
      * Takes the newly passed User Object, adds account created and updated information and stores in the database
@@ -72,7 +82,10 @@ public class UserService {
         toBeSavedUser.setAccountUpdated(currentDate);
 
         try {
+            Stopwatch stopwatch = Stopwatch.createStarted();
             userRepository.save(toBeSavedUser);
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_USER_SAVE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             logger.info("A new User saved successfully!");
         } catch (Exception e) {
             logger.error("New User couldn't be saved: " + e.getMessage());
@@ -118,7 +131,10 @@ public class UserService {
         user.setAccountUpdated(new Date());
 
         try {
+            Stopwatch stopwatch = Stopwatch.createStarted();
             userRepository.save(user);
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_USER_SAVE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             logger.info("User information updated successfully!");
         } catch (Exception e) {
             return null;
@@ -135,7 +151,11 @@ public class UserService {
      */
     public User getUserDetails(String id) {
         try {
-            return userRepository.findById(id).get();
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            User user = userRepository.findById(id).get();
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_USER_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+            return user;
         } catch (Exception e) {
             logger.error("The User couldn't be fetched from the Database successfully!");
             return null;
