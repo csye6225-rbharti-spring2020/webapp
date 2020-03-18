@@ -7,6 +7,7 @@ import com.rohan.cloudProject.model.exception.StorageException;
 import com.rohan.cloudProject.security.BasicAuthentication;
 import com.rohan.cloudProject.service.BillService;
 import com.rohan.cloudProject.service.UserService;
+import com.timgroup.statsd.StatsDClient;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,12 @@ public class BillController {
     private BasicAuthentication basicAuthentication;
 
     /**
+     * Autowired statsDClient.
+     */
+    @Autowired
+    private StatsDClient statsDClient;
+
+    /**
      * POST API to create a new bill. Bill is mapped to its respective User. Basic Auth is done before the bill is saved.
      *
      * @param authHeader
@@ -55,6 +62,7 @@ public class BillController {
     @PostMapping("/v1/bill/")
     @ApiOperation("Stores a new Bill")
     public ResponseEntity createBill(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @Valid @RequestBody Bill billToBeSaved) {
+        statsDClient.incrementCounter("endpoint.bill.http.post");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             User user = null;
@@ -91,6 +99,7 @@ public class BillController {
     @GetMapping("/v1/bills")
     @ApiOperation("Gets all the bills for the user")
     public ResponseEntity getBillsByUserId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader) {
+        statsDClient.incrementCounter("endpoint.bills.http.get");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
@@ -122,6 +131,7 @@ public class BillController {
     @DeleteMapping("/v1/bill/{id}")
     @ApiOperation("Deletes the bill for the User once he/she is authenticated")
     public ResponseEntity deleteBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable(value = "id") String billId) {
+        statsDClient.incrementCounter("endpoint.bill.http.delete");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
@@ -154,6 +164,7 @@ public class BillController {
     @GetMapping("/v1/bill/{id}")
     @ApiOperation("Fetches the Bill by its bill id.")
     public ResponseEntity getBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable(value = "id") String billId) {
+        statsDClient.incrementCounter("endpoint.bill.http.get");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
@@ -189,6 +200,7 @@ public class BillController {
     @ApiOperation("Updates the Bill by its bill id.")
     public ResponseEntity updateBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
                                          @PathVariable(value = "id") String billId, @Valid @RequestBody Bill bill) {
+        statsDClient.incrementCounter("endpoint.bill.http.put");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
@@ -225,6 +237,7 @@ public class BillController {
     @ApiOperation("Stores a new File for the Bill information supplied")
     public ResponseEntity storeNewFile(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
                                        @PathVariable(value = "id") String billId, @RequestParam("file") MultipartFile file) {
+        statsDClient.incrementCounter("endpoint.file.http.post");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
@@ -261,6 +274,7 @@ public class BillController {
     @ApiOperation("Gets the File details for the Bill stored")
     public ResponseEntity getFileByFileId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
                                           @PathVariable(value = "billId") String billId, @PathVariable(value = "fileId") String fileId) {
+        statsDClient.incrementCounter("endpoint.file.http.get");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
@@ -296,6 +310,7 @@ public class BillController {
     @ApiOperation("Gets the File details for the Bill stored")
     public ResponseEntity deleteFileByFileId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
                                              @PathVariable(value = "billId") String billId, @PathVariable(value = "fileId") String fileId) {
+        statsDClient.incrementCounter("endpoint.file.http.delete");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {

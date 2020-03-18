@@ -3,6 +3,7 @@ package com.rohan.cloudProject.controller;
 import com.rohan.cloudProject.model.User;
 import com.rohan.cloudProject.security.BasicAuthentication;
 import com.rohan.cloudProject.service.UserService;
+import com.timgroup.statsd.StatsDClient;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,12 @@ public class UserController {
     private BasicAuthentication basicAuthentication;
 
     /**
+     * Autowired statsDClient.
+     */
+    @Autowired
+    private StatsDClient statsDClient;
+
+    /**
      * GET API to fetch the User's information. The User is authenticated by self created Basic Authentication.
      * Returns the respective status code as well on the basis of User's authentication.
      *
@@ -47,6 +54,7 @@ public class UserController {
     @RequestMapping(path = "/self", method = RequestMethod.GET)
     @ApiOperation("Gets the User's information provided the User has been successfully authenticated")
     public ResponseEntity<User> getUserDetails(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader) {
+        statsDClient.incrementCounter("endpoint.user.http.get");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
@@ -74,6 +82,7 @@ public class UserController {
     @RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation("Stores a new User")
     public ResponseEntity<User> createUser(@Valid @RequestBody User userToBeSaved) {
+        statsDClient.incrementCounter("endpoint.user.http.post");
         User newUser;
         try {
             newUser = userService.createNewUser(userToBeSaved);
@@ -96,6 +105,7 @@ public class UserController {
     @RequestMapping(value = "/self", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation("Updates an already existing User")
     public ResponseEntity<User> updateUser(@RequestBody Map<String, Object> fieldsToBeUpdated, @RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader) {
+        statsDClient.incrementCounter("endpoint.user.http.put");
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
