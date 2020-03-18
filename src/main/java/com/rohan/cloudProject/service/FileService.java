@@ -37,7 +37,7 @@ import java.util.Date;
 @Service
 public class FileService {
 
-    private static final Logger logger = LoggerFactory.getLogger(BillService.class);
+    private final static Logger logger = LoggerFactory.getLogger(FileService.class);
 
     private String fileUploadPath;
 

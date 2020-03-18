@@ -34,13 +34,11 @@ public class BillController {
      */
     @Autowired
     private BillService billService;
-
     /**
      * Autowired UserService.
      */
     @Autowired
     private UserService userService;
-
     /**
      * Autowired BasicAuthentication.
      */

@@ -25,7 +25,7 @@ import java.util.List;
 @Service
 public class BillService {
 
-    private static final Logger logger = LoggerFactory.getLogger(BillService.class);
+    private final static Logger logger = LoggerFactory.getLogger(BillService.class);
 
     @Autowired
     private BillRepository billRepository;
@@ -77,6 +77,7 @@ public class BillService {
             throw new IllegalStateException("No bills exist for this user yet!");
         }
 
+        logger.info("Bills have been successfully retrieved for the User");
         return userBills;
     }
 
@@ -112,6 +113,8 @@ public class BillService {
             }
         }
 
+        logger.info("Bill " + billId + " has been successfully deleted with its attached file");
+
         billRepository.deleteById(billId);
     }
 
@@ -132,6 +135,8 @@ public class BillService {
         }
 
         Bill foundBill = billRepository.findById(billId).get();
+
+        logger.info("Retrieved Bill for the User: " + userId);
 
         return foundBill;
     }
@@ -163,6 +168,7 @@ public class BillService {
                     updatedBill.setCategories(bill.getCategories());
                     updatedBill.setPayStatus(bill.getPayStatus());
                     updatedBill.setBillUpdated(currentDate);
+                    logger.info("Successfully updated the Bill with the new information supplied for Bill: " + billId);
                     return billRepository.save(updatedBill);
                 }).orElseThrow(() ->
                 new IllegalStateException()
@@ -199,6 +205,8 @@ public class BillService {
         //Fetching the File object after persisting it in the database
         storedFile = bill.getBillFile();
 
+        logger.info("Created a new File successfully for the user: " + userId + " and the bill: " + billId);
+
         return storedFile;
     }
 
@@ -227,6 +235,8 @@ public class BillService {
         if (!bill.getBillFile().getFileId().equals(fileId)) {
             throw new IllegalArgumentException("The File ID doesn't belong to the Bill details provided.");
         }
+
+        logger.info("Fetched the file for the Bill: " + billId + " successfully");
 
         return fileService.getFileById(fileId);
     }
@@ -267,6 +277,9 @@ public class BillService {
 
         //Setting the File for the bill to null, due to cascading deletes it from the table
         bill.setBillFile(null);
+
+        logger.info("Deleted the Bill: " + billId + " successfully");
+
         billRepository.save(bill);
     }
 
