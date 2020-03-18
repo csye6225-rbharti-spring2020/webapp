@@ -3,10 +3,22 @@ os: linux
 
 files:
   - source: /
-    destination: /home/ubuntu/webapp/
+    destination: /home/ubuntu/myApp
 
 hooks:
-  AfterInstall:
-    - location: ./afterInstall.sh
-      timeout: 180
+  ApplicationStart:
+    - location: ./codeDeployScripts/start.sh
+      timeout: 20
+      runas: ubuntu
+  ApplicationStop:
+    - location: ./codeDeployScripts/stop.sh
+      timeout: 20
+      runas: ubuntu
+  BeforeInstall:
+    - location: ./codeDeployScripts/before.sh
+      timeout: 60
+      runas: ubuntu
+  ValidateService:
+    - location: ./codeDeployScripts/validate.sh
+      timeout: 60
       runas: ubuntu
