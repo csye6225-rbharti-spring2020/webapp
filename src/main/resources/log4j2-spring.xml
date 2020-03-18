@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
-
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout
                     pattern="%style{%d{ISO8601}}{black} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: %msg%n%throwable"/>
         </Console>
 
-        <RollingFile name="RollingFile" fileName="./logs/webapp.log"
-                     filePattern="./logs/$${date:yyyy-MM}/spring-boot-logger-log4j2-%d{-dd-MMMM-yyyy}-%i.log.gz"
-                     immediateFlush="true" append="true">
+        <RollingFile name="RollingFile"
+                     fileName="./logs/webapp.log"
+                     filePattern="./logs/$${date:yyyy-MM}/noteWebApp-%d{-dd-MMMM-yyyy}-%i.log.gz">
             <PatternLayout>
                 <pattern>%d %p %C{1.} [%t] %m%n</pattern>
             </PatternLayout>
@@ -25,14 +24,12 @@
     </Appenders>
 
     <Loggers>
-        <!-- LOG everything at INFO level -->
         <Root level="info">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="RollingFile"/>
         </Root>
 
-        <!-- LOG "com.baeldung*" at TRACE level -->
-        <Logger name="com.baeldung" level="trace"></Logger>
+        <Logger name="org.springframework.web" level="trace"></Logger>
     </Loggers>
 
 </Configuration>
