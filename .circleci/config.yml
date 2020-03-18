@@ -87,4 +87,4 @@ workflows:
             branches:
               only:
                 - master
-                - a7demo
+                - a7-demo
