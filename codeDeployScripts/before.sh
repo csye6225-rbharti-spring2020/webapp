@@ -2,6 +2,8 @@
 
 cd /home/ubuntu
 
+sudo systemctl start amazon-cloudwatch-agent.service
+
 dir="myApp"
 
 if [ -d $dir ] ; then
