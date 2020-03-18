@@ -1,8 +1,8 @@
 #!/bin/bash
 
+sudo chown -R ubuntu:ubuntu /home/ubuntu/*
 cd /home/ubuntu/myApp/
 
-sudo chown -R ubuntu:ubuntu /home/ubuntu/myApp/*
 sudo chmod +x ROOT.jar
 
 source /etc/profile.d/envvariable.sh
