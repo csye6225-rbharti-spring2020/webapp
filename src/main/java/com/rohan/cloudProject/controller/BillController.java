@@ -1,5 +1,7 @@
 package com.rohan.cloudProject.controller;
 
+import com.google.common.base.Stopwatch;
+import com.rohan.cloudProject.configuration.MetricsConstants;
 import com.rohan.cloudProject.model.Bill;
 import com.rohan.cloudProject.model.File;
 import com.rohan.cloudProject.model.User;
@@ -7,6 +9,7 @@ import com.rohan.cloudProject.model.exception.StorageException;
 import com.rohan.cloudProject.security.BasicAuthentication;
 import com.rohan.cloudProject.service.BillService;
 import com.rohan.cloudProject.service.UserService;
+import com.timgroup.statsd.StatsDClient;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Bill Controller class for the Spring Boot Application. Defines all the REST APIs.
@@ -34,18 +38,22 @@ public class BillController {
      */
     @Autowired
     private BillService billService;
-
     /**
      * Autowired UserService.
      */
     @Autowired
     private UserService userService;
-
     /**
      * Autowired BasicAuthentication.
      */
     @Autowired
     private BasicAuthentication basicAuthentication;
+
+    /**
+     * Autowired statsDClient.
+     */
+    @Autowired
+    private StatsDClient statsDClient;
 
     /**
      * POST API to create a new bill. Bill is mapped to its respective User. Basic Auth is done before the bill is saved.
@@ -57,28 +65,40 @@ public class BillController {
     @PostMapping("/v1/bill/")
     @ApiOperation("Stores a new Bill")
     public ResponseEntity createBill(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @Valid @RequestBody Bill billToBeSaved) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_BILL_HTTP_POST);
+        Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             User user = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.BAD_REQUEST);
             }
 
             user = userService.getUserDetails(userId);
             if (user == null) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity("User doesn't exist", HttpStatus.BAD_REQUEST);
             }
 
             billToBeSaved.setUser(user);
             try {
                 Bill bill = billService.createNewBill(billToBeSaved);
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(bill, HttpStatus.CREATED);
             } catch (Exception e) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
             }
         } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.FORBIDDEN);
         }
     }
@@ -93,11 +113,15 @@ public class BillController {
     @GetMapping("/v1/bills")
     @ApiOperation("Gets all the bills for the user")
     public ResponseEntity getBillsByUserId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_BILLS_HTTP_GET);
+        Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
@@ -105,10 +129,16 @@ public class BillController {
             try {
                 bills = billService.getAllBillsByUserId(userId);
             } catch (Exception ex) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
             }
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity(bills, HttpStatus.OK);
         } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }
@@ -124,23 +154,35 @@ public class BillController {
     @DeleteMapping("/v1/bill/{id}")
     @ApiOperation("Deletes the bill for the User once he/she is authenticated")
     public ResponseEntity deleteBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable(value = "id") String billId) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_BILL_HTTP_DELETE);
+        Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
             try {
                 billService.deleteById(billId, userId);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             } catch (Exception ex) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
             }
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }
@@ -156,11 +198,15 @@ public class BillController {
     @GetMapping("/v1/bill/{id}")
     @ApiOperation("Fetches the Bill by its bill id.")
     public ResponseEntity getBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable(value = "id") String billId) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_BILL_HTTP_GET);
+        Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
@@ -168,12 +214,20 @@ public class BillController {
             try {
                 bill = billService.getBillByBillId(billId, userId);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             } catch (Exception ex) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity("The Bill for the ID provided doesn't exist", HttpStatus.NOT_FOUND);
             }
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity(bill, HttpStatus.OK);
         } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }
@@ -191,11 +245,15 @@ public class BillController {
     @ApiOperation("Updates the Bill by its bill id.")
     public ResponseEntity updateBillById(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
                                          @PathVariable(value = "id") String billId, @Valid @RequestBody Bill bill) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_BILL_HTTP_PUT);
+        Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_PUT, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
@@ -203,14 +261,24 @@ public class BillController {
             try {
                 updatedBill = billService.updateBillByBillId(bill, billId, userId);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_PUT, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             } catch (IllegalStateException illegalState) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_PUT, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalState.getMessage(), HttpStatus.BAD_REQUEST);
             } catch (Exception ex) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_PUT, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(ex.getMessage(), HttpStatus.NOT_FOUND);
             }
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_PUT, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity(updatedBill, HttpStatus.OK);
         } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILL_HTTP_PUT, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }
@@ -227,11 +295,15 @@ public class BillController {
     @ApiOperation("Stores a new File for the Bill information supplied")
     public ResponseEntity storeNewFile(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
                                        @PathVariable(value = "id") String billId, @RequestParam("file") MultipartFile file) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_FILE_HTTP_POST);
+        Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
@@ -239,14 +311,24 @@ public class BillController {
             try {
                 toBeSavedFile = billService.createFileForBill(billId, userId, file);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             } catch (StorageException storageException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(storageException.getMessage(), HttpStatus.BAD_REQUEST);
             } catch (Exception ex) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(ex.getMessage(), HttpStatus.NOT_FOUND);
             }
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity(toBeSavedFile, HttpStatus.OK);
         } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_POST, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }
@@ -263,11 +345,15 @@ public class BillController {
     @ApiOperation("Gets the File details for the Bill stored")
     public ResponseEntity getFileByFileId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
                                           @PathVariable(value = "billId") String billId, @PathVariable(value = "fileId") String fileId) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_FILE_HTTP_GET);
+        Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
@@ -275,12 +361,20 @@ public class BillController {
             try {
                 file = billService.getFileForBill(billId, userId, fileId);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             } catch (Exception ex) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(ex.getMessage(), HttpStatus.NOT_FOUND);
             }
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity(file, HttpStatus.OK);
         } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }
@@ -298,23 +392,35 @@ public class BillController {
     @ApiOperation("Gets the File details for the Bill stored")
     public ResponseEntity deleteFileByFileId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader,
                                              @PathVariable(value = "billId") String billId, @PathVariable(value = "fileId") String fileId) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_FILE_HTTP_DELETE);
+        Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
             String userId = null;
             try {
                 userId = basicAuthentication.authorize(authHeader);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
             try {
                 billService.deleteFileForBill(billId, userId, fileId);
             } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             } catch (Exception ex) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
                 return new ResponseEntity("The File for provided Bill ID doesn't exist", HttpStatus.NOT_FOUND);
             }
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }
