@@ -18,6 +18,3 @@ if [ -d $logsDir ] ; then
     ls -al
     cd ~
 fi
-
-sudo apt-get update -y
-sudo apt-get install curl
