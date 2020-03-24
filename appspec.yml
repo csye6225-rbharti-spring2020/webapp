@@ -8,7 +8,7 @@ files:
 hooks:
   ApplicationStart:
     - location: ./codeDeployScripts/start.sh
-      timeout: 20
+      timeout: 300
       runas: ubuntu
   ApplicationStop:
     - location: ./codeDeployScripts/stop.sh
