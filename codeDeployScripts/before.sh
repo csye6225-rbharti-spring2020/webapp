@@ -18,14 +18,3 @@ if [ -d $logsDir ] ; then
     ls -al
     cd ~
 fi
-
-#webapplog="/var/log/webapp.log"
-#
-#if [ -f $webapplog ] ; then
-#    cd /var/log/
-#    sudo rm webapp.log
-#    ls -al
-#    sudo touch webapp.log
-#    sudo chmod 777 webapp.log
-#    cd ~
-#fi
