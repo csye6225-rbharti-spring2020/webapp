@@ -3,6 +3,8 @@ package com.rohan.cloudProject;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -36,5 +38,12 @@ public class CloudProjectApplication {
                 .withCredentials(new InstanceProfileCredentialsProvider(false))
                 .build();
         return amazonS3Client;
+    }
+
+    @Bean
+    @Profile("aws")
+    public AmazonSQS amazonSqsClient() {
+        AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
+        return sqs;
     }
 }

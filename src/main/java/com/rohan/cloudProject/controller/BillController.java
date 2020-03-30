@@ -8,6 +8,7 @@ import com.rohan.cloudProject.model.User;
 import com.rohan.cloudProject.model.exception.StorageException;
 import com.rohan.cloudProject.security.BasicAuthentication;
 import com.rohan.cloudProject.service.BillService;
+import com.rohan.cloudProject.service.SqsService;
 import com.rohan.cloudProject.service.UserService;
 import com.timgroup.statsd.StatsDClient;
 import io.swagger.annotations.Api;
@@ -54,6 +55,12 @@ public class BillController {
      */
     @Autowired
     private StatsDClient statsDClient;
+
+    /**
+     * Autowired sqsService.
+     */
+    @Autowired
+    private SqsService sqsService;
 
     /**
      * POST API to create a new bill. Bill is mapped to its respective User. Basic Auth is done before the bill is saved.
@@ -421,6 +428,51 @@ public class BillController {
         } else {
             stopwatch.stop();
             statsDClient.recordExecutionTime(MetricsConstants.TIMER_FILE_HTTP_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+            return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * GET API to fetch all the bills due in the next N days for the supplied User Information.
+     * Each Bill is mapped to its respective User. Basic Auth is done before the bills are fetched for that user.
+     *
+     * @param authHeader
+     * @return ResponseEntity
+     */
+    @GetMapping("/v1/bills/due/{daysNum}")
+    @ApiOperation("Gets all the bills for the user")
+    public ResponseEntity getBillsDueByUserId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable String daysNum) {
+        statsDClient.incrementCounter(MetricsConstants.ENDPOINT_BILLS_DUE_HTTP_GET);
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
+            String userId = null;
+            try {
+                userId = basicAuthentication.authorize(authHeader);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
+            }
+
+            List<Bill> bills;
+            try {
+                Long daysNumDue = Long.parseLong(daysNum);
+                bills = billService.getAllBillsDueByUserId(userId, daysNumDue);
+            } catch (Exception ex) {
+                stopwatch.stop();
+                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                return new ResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+
+            //Put the List of bills on the SQS Queue
+            sqsService.enqueueBillsDueOnSqs(bills);
+
+            return new ResponseEntity(bills, HttpStatus.OK);
+        } else {
+            stopwatch.stop();
+            statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return new ResponseEntity("Please provide a valid username and password for authentication!", HttpStatus.UNAUTHORIZED);
         }
     }

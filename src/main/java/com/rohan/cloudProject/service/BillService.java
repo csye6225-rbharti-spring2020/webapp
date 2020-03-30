@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -318,5 +319,43 @@ public class BillService {
         statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_FILE_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
+    /**
+     * After authenticating the user, supplies a List of Bills for the user which are due in the next 'daysNumDue' days.
+     *
+     * @param userId
+     * @param daysNumDue
+     */
+    public List<Bill> getAllBillsDueByUserId(String userId, Long daysNumDue) {
+        List<Bill> userBills = new ArrayList<>();
+        List<Bill> billsDue = new ArrayList<>();
+        Date currentDate = new Date();
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        List<Bill> allBills = billRepository.findAll();
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_BILLS_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+
+        for (Bill bill : allBills) {
+            if (bill.getUser().getId().equals(userId)) {
+                userBills.add(bill);
+            }
+        }
+
+        if (userBills.size() == 0) {
+            throw new IllegalStateException("No bills exist for this user yet!");
+        }
+
+        Long daysDiff;
+
+        for (Bill bill : userBills) {
+            daysDiff = ChronoUnit.DAYS.between(bill.getDueDate().toInstant(), currentDate.toInstant());
+            if (daysDiff >= 0 && daysDiff <= daysNumDue) {
+                billsDue.add(bill);
+            }
+        }
+
+        logger.info(billsDue.size() + " Due Bills have been successfully retrieved for the User");
+        return billsDue;
+    }
 }
 
