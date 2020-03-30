@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * SQS Queue Componnet Listener
+ * SQS Queue Component Listener
  *
  * @author rohan_bharti
  */
@@ -130,7 +130,7 @@ public class SqsPollingComponentListener {
                     if (topic.getTopicArn().endsWith(amazonSnsTopic)) {
                         snsPublishRequest.withTopicArn(topic.getTopicArn());
                         amazonSNSClient.publish(snsPublishRequest);
-                        logger.info("Published successfully to the SNS Topic with the User's Email and the List of Due Bills");
+                        logger.info("Published message successfully to the SNS Topic with the User's Email and the List of Due Bills");
                         break;
                     }
                 }
