@@ -39,7 +39,7 @@ public class SqsService {
     @Value("${amazon.sqs.url}")
     private String amazonSqsUrl;
 
-    public boolean enqueueBillsDueOnSqs(List<Bill> billsDue) {
+    public boolean enqueueBillsDueOnSqs(List<Bill> billsDue, String userEmail) {
 
         try {
             logger.info("Sending a message to MyQueue, adding BillsDue to the message!");
@@ -52,9 +52,12 @@ public class SqsService {
             }
 
             SdkInternalMap<String, MessageAttributeValue> messageAttributes = new SdkInternalMap<>();
-            MessageAttributeValue messageAttributeValue = new MessageAttributeValue();
-            messageAttributeValue.setStringListValues(billsDueJsonList);
-            messageAttributes.put("billsDue", messageAttributeValue);
+            MessageAttributeValue billsDueMessageAttributeValue = new MessageAttributeValue();
+            billsDueMessageAttributeValue.setStringListValues(billsDueJsonList);
+            MessageAttributeValue emailMessageAttributeValue = new MessageAttributeValue();
+            emailMessageAttributeValue.setStringValue(userEmail);
+            messageAttributes.put("billsDue", billsDueMessageAttributeValue);
+            messageAttributes.put("email", emailMessageAttributeValue);
 
             SendMessageRequest sendMessageRequest = new SendMessageRequest();
             sendMessageRequest.setQueueUrl(amazonSqsUrl);

@@ -132,6 +132,11 @@
             <version>2.8.5</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sns</artifactId>
+            <version>1.11.754</version>
+        </dependency>
     </dependencies>
 
     <build>
