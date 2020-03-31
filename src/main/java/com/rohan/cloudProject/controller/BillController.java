@@ -14,6 +14,7 @@ import com.timgroup.statsd.StatsDClient;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -59,8 +60,14 @@ public class BillController {
     /**
      * Autowired sqsService.
      */
-    @Autowired
+    @Autowired(required = false)
     private SqsService sqsService;
+
+    /**
+     * Current Profile in use
+     */
+    @Value("${spring.profiles.active}")
+    private String activeProfile;
 
     /**
      * POST API to create a new bill. Bill is mapped to its respective User. Basic Auth is done before the bill is saved.
@@ -455,9 +462,12 @@ public class BillController {
             }
 
             List<Bill> bills;
+            String userEmail;
             try {
                 Long daysNumDue = Long.parseLong(daysNum);
                 bills = billService.getAllBillsDueByUserId(userId, daysNumDue);
+                User user = userService.getUserDetails(userId);
+                userEmail = user.getEmail();
             } catch (Exception ex) {
                 stopwatch.stop();
                 statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
@@ -467,7 +477,9 @@ public class BillController {
             statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
             //Put the List of bills on the SQS Queue
-            sqsService.enqueueBillsDueOnSqs(bills);
+            if (activeProfile.equals("aws")) {
+                sqsService.enqueueBillsDueOnSqs(bills, userEmail);
+            }
 
             return new ResponseEntity(bills, HttpStatus.OK);
         } else {

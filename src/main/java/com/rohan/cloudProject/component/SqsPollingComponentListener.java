@@ -16,10 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,13 +33,13 @@ public class SqsPollingComponentListener {
     /**
      * Autowired amazonSqsClient
      */
-    @Autowired
+    @Autowired(required = false)
     private AmazonSQS amazonSqsClient;
 
     /**
      * Autowired amazonSNSClient
      */
-    @Autowired
+    @Autowired(required = false)
     private AmazonSNS amazonSNSClient;
 
     /**
@@ -106,15 +103,10 @@ public class SqsPollingComponentListener {
                 List<Topic> topics = amazonSNSClient.listTopics().getTopics();
                 SdkInternalMap<String, MessageAttributeValue> messageAttributes = new SdkInternalMap<>();
 
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                DataOutputStream out = new DataOutputStream(baos);
-                for (String billStringJson : billsDueList) {
-                    out.writeUTF(billStringJson);
-                }
-                byte[] bytes = baos.toByteArray();
-
                 MessageAttributeValue billsMessageAttributeValue = new MessageAttributeValue();
-                billsMessageAttributeValue.setBinaryValue(ByteBuffer.wrap(bytes));
+                String billsDueListString = String.join(", ", billsDueList);
+                billsMessageAttributeValue.setStringValue(billsDueListString);
+
                 MessageAttributeValue emailMessageAttributeValue = new MessageAttributeValue();
                 if (!userEmail.isEmpty()) {
                     emailMessageAttributeValue.setStringValue(userEmail);
