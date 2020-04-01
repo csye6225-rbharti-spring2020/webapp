@@ -6,7 +6,6 @@ import com.amazonaws.internal.SdkInternalMap;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.google.gson.Gson;
 import com.rohan.cloudProject.model.Bill;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +35,12 @@ public class SqsService {
     private AmazonSQS amazonSqsClient;
 
     /**
+     * Autowired Bill Service
+     */
+    @Autowired
+    private BillService billService;
+
+    /**
      * Value of the SQS's Url
      */
     @Value("${amazon.sqs.url}")
@@ -48,9 +53,9 @@ public class SqsService {
 
             List<String> billsDueJsonList = new ArrayList<>();
             for (Bill bill : billsDue) {
-                String billJson = new Gson().toJson(bill);
-                logger.info("Bill Json: " + billJson);
-                billsDueJsonList.add(billJson);
+                String billAccessUrl = billService.getAccessUrl(bill);
+                logger.info("Bill Url: " + billAccessUrl);
+                billsDueJsonList.add(billAccessUrl);
             }
 
             SdkInternalMap<String, MessageAttributeValue> messageAttributes = new SdkInternalMap<>();
@@ -58,7 +63,7 @@ public class SqsService {
             billsDueMessageAttributeValue.setStringListValues(billsDueJsonList);
             MessageAttributeValue emailMessageAttributeValue = new MessageAttributeValue();
             emailMessageAttributeValue.setStringValue(userEmail);
-            messageAttributes.put("billsDue", billsDueMessageAttributeValue);
+            messageAttributes.put("billsDueUrls", billsDueMessageAttributeValue);
             messageAttributes.put("email", emailMessageAttributeValue);
 
             SendMessageRequest sendMessageRequest = new SendMessageRequest();

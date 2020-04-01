@@ -68,7 +68,7 @@ public class SqsPollingComponentListener {
             final ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(amazonSqsUrl).withMaxNumberOfMessages(1).withWaitTimeSeconds(3);
 
             final List<Message> messages = amazonSqsClient.receiveMessage(receiveMessageRequest).getMessages();
-            List<String> billsDueList = new ArrayList<>();
+            List<String> billsDueUrlsList = new ArrayList<>();
             String userEmail = "";
 
             for (final Message message : messages) {
@@ -79,7 +79,7 @@ public class SqsPollingComponentListener {
                 if (!"".equals(message.getBody())) {
                     logger.info("Fetching the Due Bills Json From the Message Received");
 
-                    billsDueList = message.getMessageAttributes().get("billsDue").getStringListValues();
+                    billsDueUrlsList = message.getMessageAttributes().get("billsDueUrls").getStringListValues();
                     userEmail = message.getMessageAttributes().get("email").getStringValue();
                     if (!userEmail.isEmpty()) {
                         logger.info("User's email successfully fetched from the SQS Queue");
@@ -87,7 +87,7 @@ public class SqsPollingComponentListener {
                         logger.error("No email found in the SQS message");
                         return;
                     }
-                    if (billsDueList.size() > 0) {
+                    if (billsDueUrlsList.size() > 0) {
                         logger.info("Bills successfully fetched from the SQS Queue");
                     } else {
                         logger.error("Bills were NOT fetched successfully from the SQS Queue OR no due bills Exist for the User");
@@ -99,20 +99,20 @@ public class SqsPollingComponentListener {
                 }
             }
 
-            if (billsDueList.size() > 0) {
+            if (billsDueUrlsList.size() > 0) {
                 List<Topic> topics = amazonSNSClient.listTopics().getTopics();
                 SdkInternalMap<String, MessageAttributeValue> messageAttributes = new SdkInternalMap<>();
 
                 MessageAttributeValue billsMessageAttributeValue = new MessageAttributeValue();
-                String billsDueListString = String.join(", ", billsDueList);
-                billsMessageAttributeValue.setStringValue(billsDueListString);
+                String billsDueUrlsListString = String.join(", ", billsDueUrlsList);
+                billsMessageAttributeValue.setStringValue(billsDueUrlsListString);
 
                 MessageAttributeValue emailMessageAttributeValue = new MessageAttributeValue();
                 if (!userEmail.isEmpty()) {
                     emailMessageAttributeValue.setStringValue(userEmail);
                 }
 
-                messageAttributes.put("billsDueByteArray", billsMessageAttributeValue);
+                messageAttributes.put("billsDueUrlsListString", billsMessageAttributeValue);
                 messageAttributes.put("userEmail", emailMessageAttributeValue);
 
                 PublishRequest snsPublishRequest = new PublishRequest();

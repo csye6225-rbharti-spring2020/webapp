@@ -42,6 +42,9 @@ public class BillService {
     @Value("${spring.profiles.active}")
     private String activeProfile;
 
+    @Value("${domain.name}")
+    private String domainName;
+
     /**
      * Autowired statsDClient.
      */
@@ -364,6 +367,23 @@ public class BillService {
 
         logger.info(billsDue.size() + " Due Bills have been successfully retrieved for the User");
         return billsDue;
+    }
+
+    /**
+     * Creates a Url String for the Bill Object
+     *
+     * @return
+     */
+    public String getAccessUrl(Bill bill) {
+        StringBuilder sb = new StringBuilder("http://");
+        if (!domainName.equals("notAvailable")) {
+            sb.append(domainName);
+        } else {
+            logger.error("Domain Name wasn't successfully received by the application");
+        }
+        sb.append("/v1/bill/");
+        sb.append(bill.getBillId());
+        return sb.toString();
     }
 }
 

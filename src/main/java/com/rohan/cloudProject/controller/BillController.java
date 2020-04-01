@@ -481,7 +481,7 @@ public class BillController {
                 sqsService.enqueueBillsDueOnSqs(bills, userEmail);
             }
 
-            return new ResponseEntity(bills, HttpStatus.OK);
+            return new ResponseEntity(HttpStatus.OK);
         } else {
             stopwatch.stop();
             statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
