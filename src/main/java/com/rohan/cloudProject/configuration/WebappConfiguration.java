@@ -1,6 +1,7 @@
 package com.rohan.cloudProject.configuration;
 
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sns.AmazonSNS;
@@ -50,6 +51,7 @@ public class WebappConfiguration {
     public AmazonSNS amazonSNSClient() {
         AmazonSNS snsClient = AmazonSNSAsyncClientBuilder.standard()
                 .withCredentials(new InstanceProfileCredentialsProvider(false))
+                .withRegion(Regions.US_EAST_1)
                 .build();
         return snsClient;
     }
