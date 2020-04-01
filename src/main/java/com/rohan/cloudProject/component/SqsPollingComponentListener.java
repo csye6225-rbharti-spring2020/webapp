@@ -17,7 +17,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -68,7 +67,7 @@ public class SqsPollingComponentListener {
             final ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(amazonSqsUrl).withMaxNumberOfMessages(1).withWaitTimeSeconds(3);
 
             final List<Message> messages = amazonSqsClient.receiveMessage(receiveMessageRequest).getMessages();
-            List<String> billsDueUrlsList = new ArrayList<>();
+            String billsDueUrlsListString = "";
             String userEmail = "";
 
             for (final Message message : messages) {
@@ -77,20 +76,20 @@ public class SqsPollingComponentListener {
                 logger.debug("ReceiptHandle: " + message.getReceiptHandle());
                 logger.debug("Body: " + message.getBody());
                 if (!"".equals(message.getBody())) {
-                    logger.info("Fetching the Due Bills Json From the Message Received");
+                    logger.info("POLLING: Fetching the Due Bills Json From the Message Received");
 
-                    billsDueUrlsList = message.getMessageAttributes().get("billsDueUrls").getStringListValues();
+                    billsDueUrlsListString = message.getMessageAttributes().get("billsDueUrls").getStringValue();
                     userEmail = message.getMessageAttributes().get("email").getStringValue();
                     if (!userEmail.isEmpty()) {
-                        logger.info("User's email successfully fetched from the SQS Queue");
+                        logger.info("POLLING: User's email successfully fetched from the SQS Queue");
                     } else {
-                        logger.error("No email found in the SQS message");
+                        logger.error("POLLING: No email found in the SQS message");
                         return;
                     }
-                    if (billsDueUrlsList.size() > 0) {
-                        logger.info("Bills successfully fetched from the SQS Queue");
+                    if (!billsDueUrlsListString.isEmpty()) {
+                        logger.info("POLLING: Bills successfully fetched from the SQS Queue");
                     } else {
-                        logger.error("Bills were NOT fetched successfully from the SQS Queue OR no due bills Exist for the User");
+                        logger.error("POLLING: Bills were NOT fetched successfully from the SQS Queue OR no due bills Exist for the User");
                         return;
                     }
 
@@ -99,12 +98,12 @@ public class SqsPollingComponentListener {
                 }
             }
 
-            if (billsDueUrlsList.size() > 0) {
+            if (!billsDueUrlsListString.isEmpty()) {
                 List<Topic> topics = amazonSNSClient.listTopics().getTopics();
                 SdkInternalMap<String, MessageAttributeValue> messageAttributes = new SdkInternalMap<>();
 
                 MessageAttributeValue billsMessageAttributeValue = new MessageAttributeValue();
-                String billsDueUrlsListString = String.join(", ", billsDueUrlsList);
+
                 billsMessageAttributeValue.setStringValue(billsDueUrlsListString);
 
                 MessageAttributeValue emailMessageAttributeValue = new MessageAttributeValue();
@@ -122,7 +121,7 @@ public class SqsPollingComponentListener {
                     if (topic.getTopicArn().endsWith(amazonSnsTopic)) {
                         snsPublishRequest.withTopicArn(topic.getTopicArn());
                         amazonSNSClient.publish(snsPublishRequest);
-                        logger.info("Published message successfully to the SNS Topic with the User's Email and the List of Due Bills");
+                        logger.info("SNS: Published message successfully to the SNS Topic with the User's Email and the List of Due Bills");
                         break;
                     }
                 }
