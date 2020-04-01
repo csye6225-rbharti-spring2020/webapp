@@ -2,9 +2,7 @@ package com.rohan.cloudProject.service;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.internal.SdkInternalMap;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.rohan.cloudProject.model.Bill;
 import org.slf4j.Logger;
@@ -51,28 +49,24 @@ public class SqsService {
         try {
             logger.info("Sending a message to MyQueue, adding BillsDue to the message!");
 
-            List<String> billsDueJsonList = new ArrayList<>();
+            List<String> billsDueEmailJsonList = new ArrayList<>();
+
+            billsDueEmailJsonList.add(userEmail);
+
             for (Bill bill : billsDue) {
                 String billAccessUrl = billService.getAccessUrl(bill);
                 logger.info("Bill Url: " + billAccessUrl);
-                billsDueJsonList.add(billAccessUrl);
+                billsDueEmailJsonList.add(billAccessUrl);
             }
 
-            String billsDueUrlsListString = String.join(", ", billsDueJsonList);
-
-            SdkInternalMap<String, MessageAttributeValue> messageAttributes = new SdkInternalMap<>();
-            MessageAttributeValue billsDueMessageAttributeValue = new MessageAttributeValue();
-            billsDueMessageAttributeValue.setStringValue(billsDueUrlsListString);
-            MessageAttributeValue emailMessageAttributeValue = new MessageAttributeValue();
-            emailMessageAttributeValue.setStringValue(userEmail);
-            messageAttributes.put("billsDueUrls", billsDueMessageAttributeValue);
-            messageAttributes.put("email", emailMessageAttributeValue);
+            String billsDueUrlsEmailListString = String.join(", ", billsDueEmailJsonList);
 
             SendMessageRequest sendMessageRequest = new SendMessageRequest();
             sendMessageRequest.setQueueUrl(amazonSqsUrl);
-            sendMessageRequest.withMessageAttributes(messageAttributes);
+            sendMessageRequest.setMessageBody(billsDueUrlsEmailListString);
 
             amazonSqsClient.sendMessage(sendMessageRequest);
+            logger.info("Message to SQS: " + billsDueUrlsEmailListString);
             logger.info("Message Sent to the SQS Queue: " + amazonSqsUrl);
             return true;
 
