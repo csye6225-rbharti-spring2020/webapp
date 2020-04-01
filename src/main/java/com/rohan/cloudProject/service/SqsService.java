@@ -58,9 +58,11 @@ public class SqsService {
                 billsDueJsonList.add(billAccessUrl);
             }
 
+            String billsDueUrlsListString = String.join(", ", billsDueJsonList);
+
             SdkInternalMap<String, MessageAttributeValue> messageAttributes = new SdkInternalMap<>();
             MessageAttributeValue billsDueMessageAttributeValue = new MessageAttributeValue();
-            billsDueMessageAttributeValue.setStringListValues(billsDueJsonList);
+            billsDueMessageAttributeValue.setStringValue(billsDueUrlsListString);
             MessageAttributeValue emailMessageAttributeValue = new MessageAttributeValue();
             emailMessageAttributeValue.setStringValue(userEmail);
             messageAttributes.put("billsDueUrls", billsDueMessageAttributeValue);
