@@ -16,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -39,6 +41,9 @@ public class BillService {
 
     @Value("${spring.profiles.active}")
     private String activeProfile;
+
+    @Value("${domain.name}")
+    private String domainName;
 
     /**
      * Autowired statsDClient.
@@ -318,5 +323,67 @@ public class BillService {
         statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_FILE_DELETE, stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
+    /**
+     * After authenticating the user, supplies a List of Bills for the user which are due in the next 'daysNumDue' days.
+     *
+     * @param userId
+     * @param daysNumDue
+     */
+    public List<Bill> getAllBillsDueByUserId(String userId, Long daysNumDue) throws ParseException {
+        List<Bill> userBills = new ArrayList<>();
+        List<Bill> billsDue = new ArrayList<>();
+        Date currentDate = new Date();
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        List<Bill> allBills = billRepository.findAll();
+        stopwatch.stop();
+        statsDClient.recordExecutionTime(MetricsConstants.TIMER_DATABASE_BILLS_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
+
+        for (Bill bill : allBills) {
+            if (bill.getUser().getId().equals(userId)) {
+                userBills.add(bill);
+            }
+        }
+
+        if (userBills.size() == 0) {
+            throw new IllegalStateException("No bills exist for this user yet!");
+        }
+
+        Long daysDiff;
+
+        for (Bill bill : userBills) {
+            String billDueDate = bill.getDueDate().toString();
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            Date dueDate = formatter.parse(billDueDate);
+            if (currentDate.compareTo(dueDate) <= 0) {
+                long diff = dueDate.getTime() - currentDate.getTime();
+                daysDiff = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+                logger.info(String.valueOf(daysDiff));
+                if (daysDiff.intValue() >= 0 && daysDiff.compareTo(daysNumDue) <= 0) {
+                    billsDue.add(bill);
+                }
+            }
+        }
+
+        logger.info(billsDue.size() + " Due Bills have been successfully retrieved for the User");
+        return billsDue;
+    }
+
+    /**
+     * Creates a Url String for the Bill Object
+     *
+     * @return
+     */
+    public String getAccessUrl(Bill bill) {
+        StringBuilder sb = new StringBuilder("http://");
+        if (!domainName.equals("notAvailable")) {
+            sb.append(domainName);
+        } else {
+            logger.error("Domain Name wasn't successfully received by the application");
+        }
+        sb.append("/v1/bill/");
+        sb.append(bill.getBillId());
+        return sb.toString();
+    }
 }
 

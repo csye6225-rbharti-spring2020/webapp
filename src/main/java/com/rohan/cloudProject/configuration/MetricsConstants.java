@@ -18,6 +18,7 @@ public class MetricsConstants {
     public static final String ENDPOINT_USER_HTTP_GET = "endpoint.user.http.get";
     public static final String ENDPOINT_USER_HTTP_POST = "endpoint.user.http.post";
     public static final String ENDPOINT_USER_HTTP_PUT = "endpoint.user.http.put";
+    public static final String ENDPOINT_BILLS_DUE_HTTP_GET = "endpoint.bills.due.http.get";
     public static final String TIMER_BILL_HTTP_POST = "timer.bill.http.post";
     public static final String TIMER_BILLS_HTTP_GET = "timer.bills.http.get";
     public static final String TIMER_BILL_HTTP_DELETE = "timer.bill.http.delete";
@@ -40,5 +41,6 @@ public class MetricsConstants {
     public static final String TIMER_DATABASE_FILE_DELETE = "timer.database.file.delete";
     public static final String TIMER_S3_FILE_UPLOAD = "timer.s3.file.upload";
     public static final String TIMER_S3_FILE_DELETE = "timer.s3.file.delete";
+    public static final String TIMER_BILLS_DUE_HTTP_GET = "timer.bills.due.http.get";
 
 }

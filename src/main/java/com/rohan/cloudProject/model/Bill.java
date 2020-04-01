@@ -71,14 +71,14 @@ public class Bill {
     private String vendor;
 
     @JsonProperty(value = "bill_date")
-    @Temporal(TemporalType.DATE)
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "UTC")
     @NotNull
     private Date billDate;
 
     @JsonProperty(value = "due_date")
-    @Temporal(TemporalType.DATE)
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "UTC")
     @NotNull
     private Date dueDate;
 
@@ -104,4 +104,5 @@ public class Bill {
     public String getUserId() {
         return user.getId();
     }
+
 }
