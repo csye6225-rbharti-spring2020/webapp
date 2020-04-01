@@ -61,7 +61,6 @@ public class SqsPollingComponentListener {
     public void getMessageFromQueue() throws IOException {
 
         while (true) {
-            logger.info("Receiving messages from MyQueue");
             final ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(amazonSqsUrl).withMaxNumberOfMessages(1).withWaitTimeSeconds(3);
 
             final List<Message> messages = amazonSqsClient.receiveMessage(receiveMessageRequest).getMessages();
@@ -96,8 +95,11 @@ public class SqsPollingComponentListener {
 
                 for (Topic topic : topics) {
                     if (topic.getTopicArn().endsWith(amazonSnsTopic)) {
+                        logger.info("SNS Topic: " + amazonSnsTopic);
+                        logger.info("SNS Topic ARN: " + topic.getTopicArn());
                         snsPublishRequest.withTopicArn(topic.getTopicArn());
                         amazonSNSClient.publish(snsPublishRequest);
+                        logger.info("SNS Message to be published: " + billsDueUrlsEmailListString);
                         logger.info("SNS: Published message successfully to the SNS Topic with the User's Email and the List of Due Bills");
                         break;
                     }
