@@ -4,16 +4,12 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.rohan.cloudProject.model.Bill;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * SQS Amazon Service Layer Class for the Spring Boot Application.
@@ -44,29 +40,23 @@ public class SqsService {
     @Value("${amazon.sqs.url}")
     private String amazonSqsUrl;
 
-    public boolean enqueueBillsDueOnSqs(List<Bill> billsDue, String userEmail) {
+    public boolean enqueueBillsDueOnSqs(String numDays, String userId) {
 
         try {
             logger.info("Sending a message to MyQueue, adding BillsDue to the message!");
 
-            List<String> billsDueEmailJsonList = new ArrayList<>();
+            StringBuilder billsDueInfoStringBuilder = new StringBuilder(userId);
+            billsDueInfoStringBuilder.append(",");
+            billsDueInfoStringBuilder.append(numDays);
 
-            billsDueEmailJsonList.add(userEmail);
-
-            for (Bill bill : billsDue) {
-                String billAccessUrl = billService.getAccessUrl(bill);
-                logger.info("Bill Url: " + billAccessUrl);
-                billsDueEmailJsonList.add(billAccessUrl);
-            }
-
-            String billsDueUrlsEmailListString = String.join(", ", billsDueEmailJsonList);
+            String billsDueInfoString = billsDueInfoStringBuilder.toString();
 
             SendMessageRequest sendMessageRequest = new SendMessageRequest();
             sendMessageRequest.setQueueUrl(amazonSqsUrl);
-            sendMessageRequest.setMessageBody(billsDueUrlsEmailListString);
+            sendMessageRequest.setMessageBody(billsDueInfoString);
 
             amazonSqsClient.sendMessage(sendMessageRequest);
-            logger.info("Message to SQS: " + billsDueUrlsEmailListString);
+            logger.info("Message to SQS: " + billsDueInfoString);
             logger.info("Message Sent to the SQS Queue: " + amazonSqsUrl);
             return true;
 
