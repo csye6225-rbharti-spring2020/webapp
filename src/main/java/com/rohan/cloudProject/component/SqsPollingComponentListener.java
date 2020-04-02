@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,7 @@ import java.util.List;
  * @author rohan_bharti
  */
 @Component
+@Profile("aws")
 public class SqsPollingComponentListener {
 
     private final static Logger logger = LoggerFactory.getLogger(SqsPollingComponentListener.class);
@@ -104,8 +106,8 @@ public class SqsPollingComponentListener {
                 logger.info("AFTER POLLING: Started processing to fetch the bills due as per the user's request");
 
                 String[] info = billsDueInfoString.split(",");
-                String daysNum = info[0];
-                String userId = info[1];
+                String userId = info[0];
+                String daysNum = info[1];
 
                 List<Bill> billsDue;
                 String userEmail;
