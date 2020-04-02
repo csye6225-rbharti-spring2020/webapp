@@ -78,83 +78,82 @@ public class SqsPollingComponentListener {
     @Scheduled(fixedRate = 1000)
     public void getMessageFromQueue() throws IOException, ParseException {
 
-        while (true) {
-            final ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(amazonSqsUrl).withMaxNumberOfMessages(1).withWaitTimeSeconds(3);
+        final ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(amazonSqsUrl).withMaxNumberOfMessages(1).withWaitTimeSeconds(3);
 
-            final List<Message> messages = amazonSqsClient.receiveMessage(receiveMessageRequest).getMessages();
-            String billsDueInfoString = "";
-            String billsDueUrlsAndEmailString = "";
+        final List<Message> messages = amazonSqsClient.receiveMessage(receiveMessageRequest).getMessages();
+        String billsDueInfoString = "";
+        String billsDueUrlsAndEmailString = "";
 
-            for (final Message message : messages) {
-                logger.debug("Message");
-                logger.debug("MessageId: " + message.getMessageId());
-                logger.debug("ReceiptHandle: " + message.getReceiptHandle());
-                logger.debug("Body: " + message.getBody());
-                if (!"".equals(message.getBody())) {
-                    logger.info("POLLING: Fetching the Due Bills Json From the Message Received");
+        for (final Message message : messages) {
+            logger.debug("Message");
+            logger.debug("MessageId: " + message.getMessageId());
+            logger.debug("ReceiptHandle: " + message.getReceiptHandle());
+            logger.debug("Body: " + message.getBody());
+            if (!"".equals(message.getBody())) {
+                logger.info("POLLING: Fetching the Due Bills Json From the Message Received");
 
-                    billsDueInfoString = message.getBody();
-                    if (!billsDueInfoString.isEmpty()) {
-                        logger.info("POLLING: User's ID and due Bills information successfully fetched from the SQS Queue");
-                    } else {
-                        logger.error("POLLING: No User Info and Bills due found in the SQS message");
-                        return;
-                    }
-
-                    logger.info("AFTER POLLING: Started processing to fetch the bills due as per the user's request");
-
-                    String[] info = billsDueInfoString.split(",");
-                    String daysNum = info[0];
-                    String userId = info[1];
-
-                    List<Bill> billsDue;
-                    String userEmail;
-
-                    Long daysNumDue = Long.parseLong(daysNum);
-                    billsDue = billService.getAllBillsDueByUserId(userId, daysNumDue);
-                    User user = userService.getUserDetails(userId);
-                    userEmail = user.getEmail();
-
-                    logger.info("User email: " + userEmail);
-                    List<String> billsDueEmailJsonList = new ArrayList<>();
-
-                    billsDueEmailJsonList.add(userEmail);
-
-                    for (Bill bill : billsDue) {
-                        String billAccessUrl = billService.getAccessUrl(bill);
-                        logger.info("Bill Url: " + billAccessUrl);
-                        billsDueEmailJsonList.add(billAccessUrl);
-                    }
-
-                    billsDueUrlsAndEmailString = String.join(",", billsDueEmailJsonList);
-
-                    final String messageReceiptHandle = messages.get(0).getReceiptHandle();
-                    amazonSqsClient.deleteMessage(new DeleteMessageRequest(amazonSqsUrl, messageReceiptHandle));
-                }
-            }
-
-            if (!billsDueUrlsAndEmailString.isEmpty()) {
-                List<Topic> topics = amazonSNSClient.listTopics().getTopics();
-
-                PublishRequest snsPublishRequest = new PublishRequest();
-                snsPublishRequest.withMessage(billsDueUrlsAndEmailString);
-
-                for (Topic topic : topics) {
-                    if (topic.getTopicArn().endsWith(amazonSnsTopic)) {
-                        logger.info("SNS Topic: " + amazonSnsTopic);
-                        logger.info("SNS Topic ARN: " + topic.getTopicArn());
-                        snsPublishRequest.withTopicArn(topic.getTopicArn());
-                        PublishResult publishResponse = amazonSNSClient.publish(snsPublishRequest);
-                        logger.info("SNS Message to be published: " + billsDueUrlsAndEmailString);
-                        logger.info("SNS: Published message successfully to the SNS Topic with the User's Email and the List of Due Bills");
-                        logger.info("Publish Response ID: " + publishResponse.getMessageId());
-                        break;
-                    }
+                billsDueInfoString = message.getBody();
+                logger.info("Queue Message: " + billsDueInfoString);
+                if (!billsDueInfoString.isEmpty()) {
+                    logger.info("POLLING: User's ID and due Bills information successfully fetched from the SQS Queue");
+                } else {
+                    logger.error("POLLING: No User Info and Bills due found in the SQS message");
+                    return;
                 }
 
+                logger.info("AFTER POLLING: Started processing to fetch the bills due as per the user's request");
+
+                String[] info = billsDueInfoString.split(",");
+                String daysNum = info[0];
+                String userId = info[1];
+
+                List<Bill> billsDue;
+                String userEmail;
+
+                Long daysNumDue = Long.parseLong(daysNum);
+                billsDue = billService.getAllBillsDueByUserId(userId, daysNumDue);
+                User user = userService.getUserDetails(userId);
+                userEmail = user.getEmail();
+
+                logger.info("User email: " + userEmail);
+                List<String> billsDueEmailJsonList = new ArrayList<>();
+
+                billsDueEmailJsonList.add(userEmail);
+
+                for (Bill bill : billsDue) {
+                    String billAccessUrl = billService.getAccessUrl(bill);
+                    logger.info("Bill Url: " + billAccessUrl);
+                    billsDueEmailJsonList.add(billAccessUrl);
+                }
+
+                billsDueUrlsAndEmailString = String.join(",", billsDueEmailJsonList);
+
+                final String messageReceiptHandle = messages.get(0).getReceiptHandle();
+                amazonSqsClient.deleteMessage(new DeleteMessageRequest(amazonSqsUrl, messageReceiptHandle));
             }
         }
 
+        if (!billsDueUrlsAndEmailString.isEmpty()) {
+            List<Topic> topics = amazonSNSClient.listTopics().getTopics();
+
+            PublishRequest snsPublishRequest = new PublishRequest();
+            snsPublishRequest.withMessage(billsDueUrlsAndEmailString);
+
+            for (Topic topic : topics) {
+                if (topic.getTopicArn().endsWith(amazonSnsTopic)) {
+                    logger.info("SNS Topic: " + amazonSnsTopic);
+                    logger.info("SNS Topic ARN: " + topic.getTopicArn());
+                    snsPublishRequest.withTopicArn(topic.getTopicArn());
+                    PublishResult publishResponse = amazonSNSClient.publish(snsPublishRequest);
+                    logger.info("SNS Message to be published: " + billsDueUrlsAndEmailString);
+                    logger.info("SNS: Published message successfully to the SNS Topic with the User's Email and the List of Due Bills");
+                    logger.info("Publish Response ID: " + publishResponse.getMessageId());
+                    break;
+                }
+            }
+
+        }
     }
 
 }
+
