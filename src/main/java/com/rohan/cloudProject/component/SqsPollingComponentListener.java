@@ -77,7 +77,7 @@ public class SqsPollingComponentListener {
      *
      * @throws IOException
      */
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 5000)
     public void getMessageFromQueue() throws IOException, ParseException {
 
         final ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(amazonSqsUrl).withMaxNumberOfMessages(1).withWaitTimeSeconds(3);
