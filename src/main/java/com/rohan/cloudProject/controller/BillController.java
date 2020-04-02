@@ -40,11 +40,13 @@ public class BillController {
      */
     @Autowired
     private BillService billService;
+
     /**
      * Autowired UserService.
      */
     @Autowired
     private UserService userService;
+
     /**
      * Autowired BasicAuthentication.
      */
@@ -461,24 +463,11 @@ public class BillController {
                 return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.UNAUTHORIZED);
             }
 
-            List<Bill> bills;
-            String userEmail;
-            try {
-                Long daysNumDue = Long.parseLong(daysNum);
-                bills = billService.getAllBillsDueByUserId(userId, daysNumDue);
-                User user = userService.getUserDetails(userId);
-                userEmail = user.getEmail();
-            } catch (Exception ex) {
-                stopwatch.stop();
-                statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
-                return new ResponseEntity(ex.getMessage(), HttpStatus.BAD_REQUEST);
-            }
             stopwatch.stop();
             statsDClient.recordExecutionTime(MetricsConstants.TIMER_BILLS_DUE_HTTP_GET, stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
-            //Put the List of bills on the SQS Queue
             if (activeProfile.equals("aws")) {
-                sqsService.enqueueBillsDueOnSqs(bills, userEmail);
+                sqsService.enqueueBillsDueOnSqs(daysNum, userId);
             }
 
             return new ResponseEntity(HttpStatus.OK);
