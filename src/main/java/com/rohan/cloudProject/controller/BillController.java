@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.text.ParseException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -450,7 +451,7 @@ public class BillController {
      */
     @GetMapping("/v1/bills/due/{daysNum}")
     @ApiOperation("Gets all the bills for the user")
-    public ResponseEntity getBillsDueByUserId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable String daysNum) {
+    public ResponseEntity getBillsDueByUserId(@RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader, @PathVariable String daysNum) throws ParseException {
         statsDClient.incrementCounter(MetricsConstants.ENDPOINT_BILLS_DUE_HTTP_GET);
         Stopwatch stopwatch = Stopwatch.createStarted();
         if (authHeader != null && authHeader.toLowerCase().startsWith("basic")) {
