@@ -2,7 +2,7 @@
 
 for i in `seq 1 10`;
 do
-  HTTP_CODE=`curl --write-out '%{http_code}' -o /dev/null -m 10 -q -s https://localhost:8080/actuator/health`
+  HTTP_CODE=`curl --write-out '%{http_code}' -o /dev/null -m 10 -q -s http://localhost:8080/actuator/health`
   if [ "$HTTP_CODE" == "200" ]; then
     echo "Actuator Health Endpoint Worked Successfully - $response_code"
     exit 0;
